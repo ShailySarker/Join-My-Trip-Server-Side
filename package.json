@@ -1,0 +1,45 @@
+{
+  "name": "join_my_trip_server_side",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node ./dist/server.js",
+    "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
+    "build": "tsc",
+    "lint": "npx eslint ./src",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "Shaily Sarker",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/cookie-parser": "^1.4.10",
+    "@types/cors": "^2.8.19",
+    "@types/dotenv": "^6.1.1",
+    "@types/express": "^5.0.5",
+    "@types/express-session": "^1.18.2",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/multer": "^2.0.0",
+    "eslint": "^9.39.1",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.48.0"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cloudinary": "^1.41.3",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "express-session": "^1.18.2",
+    "http-status": "^2.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^9.0.0",
+    "multer": "^2.0.2",
+    "multer-storage-cloudinary": "^4.0.0",
+    "zod": "^4.1.13"
+  }
+}
