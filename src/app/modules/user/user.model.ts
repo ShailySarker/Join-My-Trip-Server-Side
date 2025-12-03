@@ -18,7 +18,7 @@ const userSchema = new Schema<IUser>(
       default: IUserRole.USER,
       // required: true,
     },
-    phone: { type: String, trim: true, unique: true },
+    phone: { type: String, trim: true },
     gender: { type: String, enum: Object.values(IUserGender) },
     profilePhoto: { type: String, default: null },
     bio: { type: String, default: "" },
