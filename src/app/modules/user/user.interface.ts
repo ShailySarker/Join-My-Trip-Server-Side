@@ -13,6 +13,7 @@ export enum IUserGender {
 }
 
 export interface IUser {
+  _id?: string;
   fullname: string;
   email: string;
   password: string;
@@ -27,14 +28,14 @@ export interface IUser {
     city: string;
     country: string;
   };
-  averageRating: number; //default 0 //  User can give each other a review after the trip is completed. User also can edit or delete the review.
-  reviewCount: number; //default 0
+  averageRating?: number; //default 0 //  User can give each other a review after the trip is completed. User also can edit or delete the review.
+  reviewCount?: number; //default 0
   // subscription: {
   //   isActive: boolean; // default false
   //   subscriptionPlan?:
   //   expiresAt?: Date;
   // };
-  subscription: ISubscription;
+  subscription?: ISubscription;
   isVerified: boolean; // default false
   isDeleted: boolean; // default false
   createdAt?: Date;
