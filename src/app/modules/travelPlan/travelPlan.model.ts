@@ -3,6 +3,7 @@ import {
   ITravelPlan,
   ITravelType,
   ITrevelInterest,
+  ITrevelIsApproved,
   ITrevelStatus,
 } from "./travelPlan.interface";
 
@@ -21,19 +22,20 @@ const travelPlanSchema = new Schema<ITravelPlan>(
       trim: true,
     },
     description: { type: String, required: true },
-    images: { type: [String], default: [] },
-    budgetRange: {
-      min: {
-        type: Number,
-        required: true,
-        min: 0,
-      },
-      max: {
-        type: Number,
-        required: true,
-        min: 0,
-      },
-    },
+    image: { type: String, required: true },
+    // budgetRange: {
+    //   min: {
+    //     type: Number,
+    //     required: true,
+    //     min: 0,
+    //   },
+    //   max: {
+    //     type: Number,
+    //     required: true,
+    //     min: 0,
+    //   },
+    // },
+    budget: { type: Number, required: true },
     destination: {
       city: {
         type: String,
@@ -82,6 +84,11 @@ const travelPlanSchema = new Schema<ITravelPlan>(
         default: [],
       },
     ],
+    isApproved: {
+      type: String,
+      enum: Object.values(ITrevelIsApproved),
+      default: ITrevelIsApproved.PENDING,
+    },
   },
   {
     timestamps: true,

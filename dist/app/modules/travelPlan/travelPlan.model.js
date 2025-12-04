@@ -51,18 +51,19 @@ const travelPlanSchema = new mongoose_1.Schema({
     },
     description: { type: String, required: true },
     images: { type: [String], default: [] },
-    budgetRange: {
-        min: {
-            type: Number,
-            required: true,
-            min: 0,
-        },
-        max: {
-            type: Number,
-            required: true,
-            min: 0,
-        },
-    },
+    // budgetRange: {
+    //   min: {
+    //     type: Number,
+    //     required: true,
+    //     min: 0,
+    //   },
+    //   max: {
+    //     type: Number,
+    //     required: true,
+    //     min: 0,
+    //   },
+    // },
+    budget: { type: Number, required: true },
     destination: {
         city: {
             type: String,

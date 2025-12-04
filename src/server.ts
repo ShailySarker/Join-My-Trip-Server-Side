@@ -3,6 +3,8 @@ import mongoose from "mongoose";
 import { envVars } from "./app/config/env";
 import app from "./app";
 import { seedSuperAdmin } from "./app/utils/seedSuperAdmin";
+import { updateTravelPlanStatuses } from "./app/utils/updateTravelPlanStatuses";
+import cron from 'node-cron'; 
 
 let server: Server;
 
@@ -22,6 +24,15 @@ const startServer = async () => {
 (async () => {
   await startServer();
   await seedSuperAdmin();
+  await updateTravelPlanStatuses();
+  
+ cron.schedule('0 0 * * *', async () => {
+    console.log('Scheduled: Updating travel plan statuses...');
+    await updateTravelPlanStatuses();
+  });
+  
+  console.log('Travel plan status updater scheduled (runs daily at 00:00)');
+
 })();
 
 // unhandled rejection error(premiss rejection)

@@ -35,17 +35,24 @@ export enum ITrevelStatus {
   CANCELLED = "CANCELLED",
 }
 
+export enum ITrevelIsApproved {
+  PENDING = "PENDING",
+  APPROVED = "APPROVED",
+  REJECTED = "REJECTED",
+}
+
 export interface ITravelPlan {
   host: mongoose.Types.ObjectId; //user or admin id
   title: string;
   slug: string;
   description: string;
-  images: string[];
-  budgetRange: {
-    min: number;
-    max: number;
-    // currency: string;
-  };
+  image: string;
+  // budgetRange: {
+  //   min: number;
+  //   max: number;
+  //   // currency: string;
+  // };
+  budget: number;
   destination: {
     city: string;
     country: string;
@@ -61,6 +68,7 @@ export interface ITravelPlan {
   status: ITrevelStatus; //default upcoming
   maxGuest: number;
   minAge: number;
+  isApproved: ITrevelIsApproved; //default PENDING -- only admin can approve
   participants: mongoose.Types.ObjectId[];
   createdAt?: Date;
   updatedAt?: Date;

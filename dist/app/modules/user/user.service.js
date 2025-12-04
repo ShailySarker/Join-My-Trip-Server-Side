@@ -26,6 +26,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserServices = void 0;
 const http_status_1 = __importDefault(require("http-status"));
 const env_1 = require("../../config/env");
+const user_interface_1 = require("./user.interface");
 const user_model_1 = require("./user.model");
 const AppError_1 = __importDefault(require("../../errorHelpers/AppError"));
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
@@ -91,11 +92,12 @@ const updateUserProfile = (userId, payload) => __awaiter(void 0, void 0, void 0,
     };
 });
 const getAllUsers = (query) => __awaiter(void 0, void 0, void 0, function* () {
-    const userQuery = new QueryBuilder_1.default(user_model_1.User.find({ isDeleted: false }).select("-password"), query);
+    const userQuery = new QueryBuilder_1.default(user_model_1.User.find({ isDeleted: false, role: user_interface_1.IUserRole.USER }).select("-password"), query);
     const result = yield userQuery
         .search(user_constant_1.searchableFields)
         .filter(user_constant_1.filterableFields)
         .sort(user_constant_1.sortableFields)
+        // .sortBy()
         .paginate()
         .fields()
         .execute();

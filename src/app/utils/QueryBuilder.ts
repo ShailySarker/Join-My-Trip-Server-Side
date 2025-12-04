@@ -48,7 +48,18 @@ class QueryBuilder<T> {
     const queryObj = { ...this.query };
 
     // Remove reserved fields
-    const excludeFields = ["search", "sort", "sortBy", "limit", "page", "fields"];
+    const excludeFields = [
+      "search",
+      "sort",
+      "sortBy",
+      "limit",
+      "page",
+      "fields",
+      "minBudget",
+      "maxBudget",
+      "startDate",
+      "endDate",
+    ];
     excludeFields.forEach((field) => delete queryObj[field]);
 
     // Build filter object
@@ -82,8 +93,66 @@ class QueryBuilder<T> {
   }
 
   /**
+   * Filter by range values (budget range and date range)
+   * Query params:
+   *   - minBudget: minimum budget (inclusive)
+   *   - maxBudget: maximum budget (inclusive)
+   *   - startDate: filter for trips starting from this date (inclusive)
+   *   - endDate: filter for trips ending by this date (inclusive)
+   * Examples:
+   *   - ?minBudget=1000&maxBudget=5000
+   *   - ?startDate=2024-06-01&endDate=2024-12-31
+   */
+  filterByRange(): this {
+    const rangeFilter: Record<string, any> = {};
+
+    // Budget range filtering
+    const minBudget = this.query?.minBudget;
+    const maxBudget = this.query?.maxBudget;
+
+    if (minBudget || maxBudget) {
+      rangeFilter.budget = {};
+
+      if (minBudget) {
+        rangeFilter.budget.$gte = Number(minBudget);
+      }
+
+      if (maxBudget) {
+        rangeFilter.budget.$lte = Number(maxBudget);
+      }
+    }
+
+    // Date range filtering
+    const startDate = this.query?.startDate;
+    const endDate = this.query?.endDate;
+
+    if (startDate || endDate) {
+      // Filter for trips that overlap with the specified date range
+      if (startDate && endDate) {
+        // Trips that start before or on endDate AND end after or on startDate
+        rangeFilter.$and = [
+          { startDate: { $lte: new Date(endDate as string) } },
+          { endDate: { $gte: new Date(startDate as string) } },
+        ];
+      } else if (startDate) {
+        // Trips that end on or after the startDate
+        rangeFilter.endDate = { $gte: new Date(startDate as string) };
+      } else if (endDate) {
+        // Trips that start on or before the endDate
+        rangeFilter.startDate = { $lte: new Date(endDate as string) };
+      }
+    }
+
+    if (Object.keys(rangeFilter).length > 0) {
+      this.modelQuery = this.modelQuery.find(rangeFilter);
+    }
+
+    return this;
+  }
+
+  /**
    * Sort results by specified field and order
-   * Query params: 
+   * Query params:
    *   - sort: field name (e.g., sort=averageRating)
    *   - sortBy: order - 'asc' or 'desc' (default: 'asc')
    * Example: ?sort=averageRating&sortBy=desc
@@ -104,7 +173,7 @@ class QueryBuilder<T> {
 
     // Build sort string: field for ascending, -field for descending
     let sortString = sortField;
-    
+
     if (sortOrder.toLowerCase() === "desc") {
       sortString = `-${sortField}`;
     }
@@ -158,9 +227,7 @@ class QueryBuilder<T> {
 
     // Get total count for pagination (need to run a separate count query)
     // Clone the original query conditions without skip/limit
-    const countQuery = this.modelQuery.model.find(
-      this.modelQuery.getFilter()
-    );
+    const countQuery = this.modelQuery.model.find(this.modelQuery.getFilter());
     const total = await countQuery.countDocuments();
 
     const totalPage = Math.ceil(total / limit);

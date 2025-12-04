@@ -1,0 +1,14 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.TravelPlanRouters = void 0;
+const express_1 = require("express");
+const validateRequest_1 = require("../../middlewares/validateRequest");
+const travelPlan_controller_1 = require("./travelPlan.controller");
+const travelPlan_validation_1 = require("./travelPlan.validation");
+const checkAuth_1 = require("../../middlewares/checkAuth");
+const user_interface_1 = require("../user/user.interface");
+const router = (0, express_1.Router)();
+router.post("/", (0, checkAuth_1.checkAuth)(user_interface_1.IUserRole.USER), (0, validateRequest_1.validatedRequest)(travelPlan_validation_1.TravelPlanSchemaValidation.createTravelPlanSchema), travelPlan_controller_1.TravelPlanControllers.createTravelPlan);
+router.get("/", (0, checkAuth_1.checkAuth)(...Object.values(user_interface_1.IUserRole)), travelPlan_controller_1.TravelPlanControllers.getAllTravelPlansPublic);
+router.get("/:id", (0, checkAuth_1.checkAuth)(...Object.values(user_interface_1.IUserRole)), travelPlan_controller_1.TravelPlanControllers.getTravelPlanById);
+exports.TravelPlanRouters = router;
