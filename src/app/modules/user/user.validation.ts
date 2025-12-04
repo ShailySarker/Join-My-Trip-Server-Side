@@ -97,6 +97,47 @@ export const createUserSchema = z
     }
   );
 
+export const updateUserSchema = z.object({
+  fullname: z
+    .string()
+    .min(2, { message: "Full name must be at least 2 characters" })
+    .max(100, { message: "Full name cannot exceed 100 characters" })
+    .optional(),
+
+  phone: z
+    .string({ message: "Phone Number must be string" })
+    .regex(/^(?:01\d{9})$/, {
+      message: "Phone number must be valid for Bangladesh. Format:01XXXXXXXXX",
+    })
+    .optional(),
+        gender: z.nativeEnum(IUserGender).optional(),
+  travelInterests: z
+    .array(z.string({ message: "Travel interest must be string" }))
+    .optional(),
+  visitedCountries: z
+    .array(z.string({ message: "Visited country name must be string" }))
+    .optional(),
+  bio: z
+    .string()
+    .min(20, { message: "Bio must be at least 20 characters" })
+    .max(500, { message: "Bio cannot exceed 500 characters" })
+    .optional(),
+
+  currentLocation: z
+    .object({
+      city: z
+        .string()
+        .max(50, { message: "City name cannot exceed 50 characters" })
+        .optional(),
+      country: z
+        .string()
+        .max(50, { message: "Country name cannot exceed 50 characters" })
+        .optional(),
+    })
+    .optional(),
+});
+
 export const UserSchemaValidation = {
   createUserSchema,
+  updateUserSchema,
 };
