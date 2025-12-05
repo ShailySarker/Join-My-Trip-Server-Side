@@ -1,5 +1,31 @@
 import { z } from "zod";
 import { ITravelType, ITrevelInterest } from "./travelPlan.interface";
+import { IUserGender } from "../user/user.interface";
+
+// Participant details validation schema
+export const participantDetailsSchema = z.object({
+  name: z
+    .string({ message: "Participant name is required" })
+    .min(2, "Name must be at least 2 characters")
+    .max(100, "Name cannot exceed 100 characters")
+    .trim(),
+  phone: z
+    .string({ message: "Phone number is required" })
+    .regex(
+      /^(\+8801|01)[3-9]\d{8}$/,
+      "Invalid Bangladesh phone number format. Use +8801XXXXXXXXX or 01XXXXXXXXX"
+    )
+    .trim(),
+  gender: z.nativeEnum(IUserGender, {
+    message: "Gender must be either MALE or FEMALE",
+  }),
+  age: z
+    .number({ message: "Age is required" })
+    .int("Age must be an integer")
+    .min(5, "Age must be at least 5 years")
+    .max(120, "Age cannot exceed 120 years"),
+  userId: z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid user ID format").optional(),
+});
 
 export const createTravelPlanSchema = z
   .object({
@@ -147,7 +173,23 @@ export const updateTravelPlanSchema = z
     }
   );
 
+// Add participant to travel plan validation
+export const addParticipantSchema = z.object({
+  body: participantDetailsSchema,
+});
+
+// Remove participant validation
+export const removeParticipantSchema = z.object({
+  params: z.object({
+    travelPlanId: z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid travel plan ID"),
+    phone: z.string().regex(/^(\+8801|01)[3-9]\d{8}$/, "Invalid phone number format"),
+  }),
+});
+
 export const TravelPlanSchemaValidation = {
   createTravelPlanSchema,
   updateTravelPlanSchema,
+  participantDetailsSchema,
+  addParticipantSchema,
+  removeParticipantSchema,
 };

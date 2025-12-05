@@ -27,6 +27,24 @@ router.patch(
 );
 
 router.get(
+  "/my-followers",
+  checkAuth(...Object.values(IUserRole)),
+  UserControllers.getMyFollowers
+);
+
+router.get(
+  "/my-followings",
+  checkAuth(...Object.values(IUserRole)),
+  UserControllers.getMyFollowings
+);
+
+router.post(
+  "/follow/:id",
+  checkAuth(...Object.values(IUserRole)),
+  UserControllers.toggleFollow
+);
+
+router.get(
   "/",
   checkAuth(...Object.values(IUserRole)),
   UserControllers.getAllUsers

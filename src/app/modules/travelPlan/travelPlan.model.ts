@@ -79,9 +79,37 @@ const travelPlanSchema = new Schema<ITravelPlan>(
     },
     participants: [
       {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-        default: [],
+        userId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+          required: false,
+        },
+        bookingId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Booking",
+          required: false,
+        },
+        name: {
+          type: String,
+          required: true,
+          trim: true,
+        },
+        phone: {
+          type: String,
+          required: true,
+          trim: true,
+          match: [/^(\+8801|01)[3-9]\d{8}$/, "Please provide a valid Bangladesh phone number"],
+        },
+        gender: {
+          type: String,
+          enum: ["MALE", "FEMALE"],
+          required: true,
+        },
+        age: {
+          type: Number,
+          required: true,
+          min: 5,
+        },
       },
     ],
     isApproved: {

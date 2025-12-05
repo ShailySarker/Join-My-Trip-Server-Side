@@ -5,6 +5,7 @@ import app from "./app";
 import { seedSuperAdmin } from "./app/utils/seedSuperAdmin";
 import { updateTravelPlanStatuses } from "./app/utils/updateTravelPlanStatuses";
 import cron from 'node-cron'; 
+import { startSubscriptionCronJob } from "./app/utils/subscriptionManagement";
 
 let server: Server;
 
@@ -26,12 +27,16 @@ const startServer = async () => {
   await seedSuperAdmin();
   await updateTravelPlanStatuses();
   
- cron.schedule('0 0 * * *', async () => {
+  // Schedule travel plan status updates (runs daily at 00:00)
+  cron.schedule('0 0 * * *', async () => {
     console.log('Scheduled: Updating travel plan statuses...');
     await updateTravelPlanStatuses();
   });
   
   console.log('Travel plan status updater scheduled (runs daily at 00:00)');
+
+  // Start subscription expiry cron job (runs daily at 00:00)
+  startSubscriptionCronJob();
 
 })();
 

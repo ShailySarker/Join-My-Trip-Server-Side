@@ -21,7 +21,10 @@ const createUser = catchAsync(
 const getSingleUser = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const id = req.params.id;
-    const result = await UserServices.getSingleUser(id);
+    const decodedToken = req.user as JwtPayload;
+    const viewerId = decodedToken?.userId;
+
+    const result = await UserServices.getSingleUser(id, viewerId);
     sendResponse(res, {
       success: true,
       statusCode: status.OK,
@@ -95,6 +98,51 @@ const getAllUsers = catchAsync(
   }
 );
 
+const getMyFollowers = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const decodedToken = req.user as JwtPayload;
+    const result = await UserServices.getMyFollowers(decodedToken.userId);
+
+    sendResponse(res, {
+      success: true,
+      statusCode: status.OK,
+      message: "Followers retrieved successfully",
+      data: result.data,
+    });
+  }
+);
+
+const getMyFollowings = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const decodedToken = req.user as JwtPayload;
+    const result = await UserServices.getMyFollowings(decodedToken.userId);
+
+    sendResponse(res, {
+      success: true,
+      statusCode: status.OK,
+      message: "Followings retrieved successfully",
+      data: result.data,
+    });
+  }
+);
+
+const toggleFollow = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const decodedToken = req.user as JwtPayload;
+    const currentUserId = decodedToken.userId;
+    const targetUserId = req.params.id;
+
+    const result = await UserServices.toggleFollow(currentUserId, targetUserId);
+
+    sendResponse(res, {
+      success: true,
+      statusCode: status.OK,
+      message: result.message,
+      data: { isFollowing: result.isFollowing },
+    });
+  }
+);
+
 export const UserControllers = {
   createUser,
   getSingleUser,
@@ -102,4 +150,7 @@ export const UserControllers = {
   deleteSingleUser,
   updateUserProfile,
   getAllUsers,
+  getMyFollowers,
+  getMyFollowings,
+  toggleFollow,
 };

@@ -46,4 +46,20 @@ router.patch(
   TravelPlanControllers.updateTravelPlan
 );
 
+// Participant Management Routes (Pre-booking)
+// Add participant to travel plan (host only, before booking)
+router.post(
+  "/:id/participants",
+  checkAuth(IUserRole.USER),
+  validatedRequest(TravelPlanSchemaValidation.addParticipantSchema),
+  TravelPlanControllers.addParticipant
+);
+
+// Remove participant from travel plan (host only, before booking)
+router.delete(
+  "/:id/participants/:phone",
+  checkAuth(IUserRole.USER),
+  TravelPlanControllers.removeParticipant
+);
+
 export const TravelPlanRouters = router;

@@ -131,6 +131,48 @@ const updateTravelPlan = catchAsync(
   }
 );
 
+const addParticipant = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { id } = req.params; // travel plan id
+    const decodedToken = req.user as JwtPayload;
+    const userId = decodedToken.userId;
+
+    const result = await TravelPlanServices.addParticipantToTravelPlan(
+      id,
+      userId,
+      req.body
+    );
+
+    sendResponse(res, {
+      success: true,
+      statusCode: status.OK,
+      message: "Participant added successfully",
+      data: result.data,
+    });
+  }
+);
+
+const removeParticipant = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { id, phone } = req.params; // travel plan id and participant phone
+    const decodedToken = req.user as JwtPayload;
+    const userId = decodedToken.userId;
+
+    const result = await TravelPlanServices.removeParticipantFromTravelPlan(
+      id,
+      phone,
+      userId
+    );
+
+    sendResponse(res, {
+      success: true,
+      statusCode: status.OK,
+      message: "Participant removed successfully",
+      data: result.data,
+    });
+  }
+);
+
 export const TravelPlanControllers = {
   createTravelPlan,
   getTravelPlanById,
@@ -139,4 +181,6 @@ export const TravelPlanControllers = {
   approveTravelPlan,
   cancelTravelPlan,
   updateTravelPlan,
-};
+  addParticipant,
+  removeParticipant,
+ };

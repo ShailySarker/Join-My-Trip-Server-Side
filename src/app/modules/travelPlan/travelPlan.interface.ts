@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { IUserGender } from "../user/user.interface";
 
 export enum ITravelType {
   SOLO = "SOLO",
@@ -41,6 +42,15 @@ export enum ITrevelIsApproved {
   REJECTED = "REJECTED",
 }
 
+export interface IParticipantDetails {
+  userId?: mongoose.Types.ObjectId; // Reference to User if participant is a registered user
+  bookingId?: mongoose.Types.ObjectId; // Reference to Booking that added this participant
+  name: string;
+  phone: string; // Bangladesh phone number
+  gender: IUserGender;
+  age: number;
+}
+
 export interface ITravelPlan {
   host: mongoose.Types.ObjectId; //user or admin id
   title: string;
@@ -69,7 +79,7 @@ export interface ITravelPlan {
   maxGuest: number;
   minAge: number;
   isApproved: ITrevelIsApproved; //default PENDING -- only admin can approve
-  participants: mongoose.Types.ObjectId[];
+  participants: IParticipantDetails[]; // Array of participant details (can include registered users or outsiders)
   createdAt?: Date;
   updatedAt?: Date;
 }
