@@ -9,6 +9,7 @@ import status from "http-status";
 export const createUserTokens = (user: Partial<IUser>) => {
   const jwtPayload = {
     userId: user._id,
+    fullname: user.fullname,
     email: user.email,
     role: user.role,
   };
@@ -50,6 +51,7 @@ export const createNewAccessTokenWithRefreshToken = async (
 
   const jwtPayload = {
     userId: isUserExist._id,
+    fullname: isUserExist.fullname,
     email: isUserExist.email,
     role: isUserExist.role,
   };

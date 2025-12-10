@@ -6,71 +6,75 @@ import status from "http-status";
 import { JwtPayload } from "jsonwebtoken";
 import { envVars } from "../../config/env";
 import { stripe } from "../../config/stripe.config";
+import { Payment } from "./payment.model";
+import mongoose from "mongoose";
+import { IPaymentStatus } from "./payment.interface";
+import AppError from "../../errorHelpers/AppError";
+import { Subscription } from "../subscription/subscription.model";
 
-/**
- * Create payment intent for subscription purchase
- */
-const createPaymentIntent = catchAsync(
+const createCheckoutSession = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const decodedToken = req.user as JwtPayload;
+    // console.log(decodedToken);
     const userId = decodedToken.userId;
     const { subscriptionId } = req.body;
-
-    const result = await PaymentServices.createPaymentIntent(userId, subscriptionId);
+    // console.log(userId, subscriptionId);
+    const result = await PaymentServices.createCheckoutSessionService(
+      subscriptionId,
+      userId
+    );
 
     sendResponse(res, {
       success: true,
       statusCode: status.CREATED,
-      message: "Payment intent created successfully",
+      message: "Payment checkout session created successfully",
       data: result,
     });
   }
 );
 
-/**
- * Stripe webhook handler
- */
-const handleWebhook = catchAsync(
+const handleWebhook = async (req: Request, res: Response) => {
+  const sig = req.headers["stripe-signature"] as string;
+  const rawBody = (req as any).body;
+
+  if (!sig || !rawBody)
+    return res.status(400).send("Missing signature or raw body");
+
+  let event;
+  try {
+    event = await stripe.webhooks.constructEvent(
+      rawBody,
+      sig,
+      envVars.STRIPE.STRIPE_WEBHOOK_SECRET as string
+    );
+  } catch (err: any) {
+    console.error("Webhook signature verification failed.", err.message);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  await PaymentServices.handleStripeWebhookService(event);
+  res.json({ received: true });
+};
+
+const getAllPaymentHistory = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    const sig = req.headers["stripe-signature"] as string;
+    const result = await PaymentServices.getAllPaymentHistory();
 
-    let event;
-    try {
-      event = stripe.webhooks.constructEvent(
-        req.body,
-        sig,
-        envVars.STRIPE.STRIPE_WEBHOOK_SECRET as string
-      );
-    } catch (err: any) {
-      res.status(400).send(`Webhook Error: ${err.message}`);
-      return;
-    }
-
-    // Handle the event
-    switch (event.type) {
-      case "payment_intent.succeeded":
-        await PaymentServices.handlePaymentSuccess(event.data.object);
-        break;
-      case "payment_intent.payment_failed":
-        await PaymentServices.handlePaymentFailure(event.data.object);
-        break;
-      default:
-        console.log(`Unhandled event type ${event.type}`);
-    }
-
-    res.json({ received: true });
+    sendResponse(res, {
+      success: true,
+      statusCode: status.OK,
+      message: "All payment history retrieved successfully",
+      data: result.data,
+    });
   }
 );
 
-/**
- * Get user payment history
- */
-const getPaymentHistory = catchAsync(
+const getMyPaymentHistory = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const decodedToken = req.user as JwtPayload;
     const userId = decodedToken.userId;
 
-    const result = await PaymentServices.getPaymentHistory(userId);
+    const result = await PaymentServices.getMyPaymentHistory(userId);
 
     sendResponse(res, {
       success: true,
@@ -81,9 +85,6 @@ const getPaymentHistory = catchAsync(
   }
 );
 
-/**
- * Get payment by ID
- */
 const getPaymentById = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const decodedToken = req.user as JwtPayload;
@@ -102,8 +103,9 @@ const getPaymentById = catchAsync(
 );
 
 export const PaymentControllers = {
-  createPaymentIntent,
+  createCheckoutSession,
   handleWebhook,
-  getPaymentHistory,
   getPaymentById,
+  getAllPaymentHistory,
+  getMyPaymentHistory,
 };

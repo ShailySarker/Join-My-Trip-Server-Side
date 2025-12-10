@@ -5,25 +5,24 @@ import { IUserRole } from "../user/user.interface";
 
 const router = Router();
 
-// Create payment intent (User only)
 router.post(
-  "/create-intent",
+  "/create-checkout-session",
   checkAuth(IUserRole.USER),
-  PaymentControllers.createPaymentIntent
+  PaymentControllers.createCheckoutSession
 );
 
-// Stripe webhook (No auth required - Stripe verified)
-// IMPORTANT: This route needs raw body, configure in main app
-router.post("/webhook", PaymentControllers.handleWebhook);
-
-// Get payment history
 router.get(
   "/history",
   checkAuth(IUserRole.USER),
-  PaymentControllers.getPaymentHistory
+  PaymentControllers.getMyPaymentHistory
 );
 
-// Get payment by ID
+router.get(
+  "/",
+  checkAuth(IUserRole.ADMIN, IUserRole.SUPER_ADMIN),
+  PaymentControllers.getAllPaymentHistory
+);
+
 router.get(
   "/:id",
   checkAuth(IUserRole.USER),

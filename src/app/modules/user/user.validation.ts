@@ -110,7 +110,11 @@ export const updateUserSchema = z.object({
       message: "Phone number must be valid for Bangladesh. Format:01XXXXXXXXX",
     })
     .optional(),
-        gender: z.nativeEnum(IUserGender).optional(),
+  gender: z.nativeEnum(IUserGender).optional(),
+  age: z
+    .number("Age must be a number")
+    .min(18, { message: "Age must be at least 18 years" })
+    .optional(),
   travelInterests: z
     .array(z.string({ message: "Travel interest must be string" }))
     .optional(),
@@ -121,7 +125,8 @@ export const updateUserSchema = z.object({
     .string()
     .min(20, { message: "Bio must be at least 20 characters" })
     .max(500, { message: "Bio cannot exceed 500 characters" })
-    .optional(),
+    // .optional()
+    .or(z.literal("")),
 
   currentLocation: z
     .object({

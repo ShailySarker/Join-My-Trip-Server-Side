@@ -59,14 +59,14 @@ const paymentSchema = new Schema<IPayment>(
       ref: "User",
       required: true,
     },
-    travelId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "TravelPlan",
-    },
-    bookingId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Booking",
-    },
+    // travelId: {
+    //   type: mongoose.Schema.Types.ObjectId,
+    //   ref: "TravelPlan",
+    // },
+    // bookingId: {
+    //   type: mongoose.Schema.Types.ObjectId,
+    //   ref: "Booking",
+    // },
     subscriptionId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Subscription",
@@ -89,10 +89,10 @@ const paymentSchema = new Schema<IPayment>(
       type: String,
       default: "usd",
     },
-    totalPeople: {
-      type: Number,
-      min: 1,
-    },
+    // totalPeople: {
+    //   type: Number,
+    //   min: 1,
+    // },
     status: {
       type: String,
       enum: Object.values(IPaymentStatus),

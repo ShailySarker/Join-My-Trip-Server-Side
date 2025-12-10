@@ -49,7 +49,7 @@ const userSchema = new Schema<IUser>(
       status: {
         type: String,
         enum: Object.values(ISubscriptionPlanStatus),
-        default: ISubscriptionPlanStatus.ACTIVE,
+        // default: ISubscriptionPlanStatus.ACTIVE,
       },
       startDate: Date,
       expireDate: Date,

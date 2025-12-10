@@ -5,130 +5,167 @@ import { Payment } from "./payment.model";
 import { stripe } from "../../config/stripe.config";
 import { User } from "../user/user.model";
 import { Subscription } from "../subscription/subscription.model";
-import { ISubscriptionPlan, ISubscriptionPlanStatus } from "../subscription/subscription.interface";
+import {
+  ISubscriptionPlan,
+  ISubscriptionPlanStatus,
+} from "../subscription/subscription.interface";
+import mongoose from "mongoose";
+import { envVars } from "../../config/env";
+import { IUser } from "../user/user.interface";
+import { calculateExpireDate } from "../../utils/calculateExpireDate";
 
-/**
- * Create Stripe Payment Intent for subscription purchase
- */
-const createPaymentIntent = async (userId: string, subscriptionId: string) => {
-  // 1. Get subscription details
+const createCheckoutSessionService = async (
+  subscriptionId: string,
+  userId: string
+) => {
   const subscription = await Subscription.findById(subscriptionId);
-  if (!subscription) {
-    throw new AppError(status.NOT_FOUND, "Subscription plan not found");
-  }
+  if (!subscription) throw new Error("Subscription plan not found");
 
-  // 2. Get user details
-  const user = await User.findById(userId);
-  if (!user) {
-    throw new AppError(status.NOT_FOUND, "User not found");
-  }
+  const userData = await User.findById(userId);
+  if (!userData) throw new Error("User not found");
 
-  // 3. Create or get Stripe customer
-  let customerId = user.stripeCustomerId;
-  if (!customerId) {
-    const customer = await stripe.customers.create({
-      email: user.email,
-      name: user.fullname,
-      metadata: {
-        userId: userId,
-      },
+  // Check if user already has a Stripe customer
+  let customer;
+  if (userData.stripeCustomerId) {
+    customer = await stripe.customers.retrieve(userData.stripeCustomerId);
+  } else {
+    customer = await stripe.customers.create({
+      email: userData.email,
+      name: userData.fullname,
+      metadata: { userId: userId.toString() },
     });
-    customerId = customer.id;
 
-    // Save Stripe customer ID to user
+    // Save customer ID to user
     await User.findByIdAndUpdate(userId, {
-      stripeCustomerId: customerId,
+      stripeCustomerId: customer.id,
     });
   }
 
-  // 4. Create Stripe Payment Intent
-  const paymentIntent = await stripe.paymentIntents.create({
-    amount: Math.round(subscription.amount * 100), // Convert to cents
-    currency: "usd",
-    customer: customerId,
-    metadata: {
-      userId,
-      subscriptionId,
-      plan: subscription.plan,
-    },
-    description: `Subscription: ${subscription.plan}`,
-  });
+  // Calculate expiration date based on subscription type
+  const now = new Date();
+  let expireDate = new Date(now);
 
-  // 5. Create payment record
-  const payment = await Payment.create({
-    userId: userId,
-    subscriptionId: subscriptionId,
-    stripePaymentIntentId: paymentIntent.id,
-    stripeCustomerId: customerId,
-    amount: subscription.amount,
-    currency: "usd",
-    status: IPaymentStatus.PENDING,
-  });
-
-  return {
-    clientSecret: paymentIntent.client_secret,
-    paymentId: payment._id,
-    amount: subscription.amount,
-  };
-};
-
-/**
- * Handle successful payment - Update user subscription
- */
-const handlePaymentSuccess = async (paymentIntent: any) => {
-  const { userId, subscriptionId, plan } = paymentIntent.metadata;
-
-  // 1. Update payment status
-  await Payment.findOneAndUpdate(
-    { stripePaymentIntentId: paymentIntent.id },
-    {
-      status: IPaymentStatus.COMPLETED,
-      transactionDate: new Date(),
-    }
-  );
-
-  // 2. Calculate subscription dates
-  const startDate = new Date();
-  const expireDate = new Date();
-
-  if (plan === ISubscriptionPlan.MONTHLY) {
-    expireDate.setMonth(expireDate.getMonth() + 1);
-  } else if (plan === ISubscriptionPlan.YEARLY) {
-    expireDate.setFullYear(expireDate.getFullYear() + 1);
+  if (subscription.plan.toLowerCase().includes("monthly")) {
+    expireDate.setDate(now.getDate() + 30); // 30 days for monthly
+  } else if (subscription.plan.toLowerCase().includes("yearly")) {
+    expireDate.setDate(now.getDate() + 365); // 365 days for yearly
+  } else {
+    expireDate.setDate(now.getDate() + 30); // default to 30 days
   }
 
-  // 3. Update user subscription info
-  await User.findByIdAndUpdate(userId, {
-    subscriptionInfo: {
-      subscriptionId,
-      plan,
-      status: ISubscriptionPlanStatus.ACTIVE,
-      startDate,
-      expireDate,
+  const session = await stripe.checkout.sessions.create({
+    mode: "payment",
+    payment_method_types: ["card"],
+    customer: customer.id,
+    // customer_details: { name: userData.fullname, phone: userData?.phone },
+    line_items: [
+      {
+        price_data: {
+          currency: "bdt",
+          product_data: {
+            name: `Plan: ${subscription.plan}`,
+            description: `Payment for ${subscription.plan} plan - Valid for ${
+              subscription.plan.toLowerCase().includes("monthly")
+                ? "30 days"
+                : "1 year"
+            }`,
+          },
+          unit_amount: subscription.amount * 100,
+        },
+        quantity: 1,
+      },
+    ],
+    success_url: `${envVars.FRONTEND.FRONTEND_URL}/dashboard/payment/payment-success?session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${envVars.FRONTEND.FRONTEND_URL}/dashboard/payment/payment-failed`,
+    metadata: {
+      userId: userId.toString(),
+      subscriptionId: subscriptionId.toString(),
+      subscriptionPlan: subscription.plan,
+      expireDate: expireDate.toISOString(),
     },
   });
 
-  console.log(`✅ Payment successful for user ${userId}, subscription activated`);
+  const paymentDoc = await Payment.create({
+    userId: new mongoose.Types.ObjectId(userId),
+    subscriptionId: new mongoose.Types.ObjectId(subscriptionId),
+    stripePaymentIntentId: session.id,
+    stripeCustomerId: customer.id,
+    amount: subscription.amount,
+    currency: "bdt",
+    status: IPaymentStatus.PENDING,
+    // expireDate: expireDate,
+  });
+  return session.url;
 };
 
-/**
- * Handle failed payment
- */
-const handlePaymentFailure = async (paymentIntent: any) => {
-  await Payment.findOneAndUpdate(
-    { stripePaymentIntentId: paymentIntent.id },
-    {
-      status: IPaymentStatus.FAILED,
+const handleStripeWebhookService = async (event: any) => {
+  switch (event.type) {
+    case "checkout.session.completed": {
+      const session = event.data.object;
+
+      // Parse expireDate from metadata
+      const expireDate = session.metadata.expireDate
+        ? new Date(session.metadata.expireDate)
+        : calculateExpireDate(session.metadata.subscriptionPlan);
+
+      await Payment.findOneAndUpdate(
+        { stripePaymentIntentId: session.id },
+        {
+          status: IPaymentStatus.COMPLETED,
+          stripeCustomerId: session.customer,
+          transactionDate: new Date(),
+          expireDate: expireDate,
+        }
+      );
+
+      await User.findOneAndUpdate(
+        { _id: session.metadata.userId },
+        {
+          stripeCustomerId: session.customer,
+          subscriptionInfo: {
+            subscriptionId: new mongoose.Types.ObjectId(
+              session.metadata.subscriptionId
+            ),
+            plan: session.metadata.subscriptionPlan,
+            status: ISubscriptionPlanStatus.ACTIVE,
+            startDate: new Date(),
+            expireDate: expireDate,
+          },
+        }
+      );
+      break;
     }
-  );
-
-  console.log(`❌ Payment failed for payment intent ${paymentIntent.id}`);
+    case "invoice.paid": {
+      const invoice = event.data.object;
+      const subscriptionId = invoice.subscription;
+      const customer = invoice.customer;
+      const amountPaid = invoice.amount_paid;
+      await Payment.findOneAndUpdate(
+        { stripeCustomerId: customer },
+        {
+          subscriptionId,
+          amount: amountPaid / 100,
+          currency: invoice.currency,
+          status: IPaymentStatus.COMPLETED,
+          transactionDate: new Date(),
+        }
+      );
+      break;
+    }
+    case "invoice.payment_failed": {
+      const invoice = event.data.object;
+      await Payment.findOneAndUpdate(
+        { stripeCustomerId: invoice.customer },
+        { status: IPaymentStatus.FAILED }
+      );
+      break;
+    }
+    default:
+      console.log(`Unhandled event type ${event.type}`);
+  }
 };
 
-/**
- * Get user payment history
- */
-const getPaymentHistory = async (userId: string) => {
+const getMyPaymentHistory = async (userId: string) => {
   const payments = await Payment.find({ userId: userId })
     .populate("subscriptionId", "plan amount")
     .sort({ createdAt: -1 });
@@ -137,13 +174,29 @@ const getPaymentHistory = async (userId: string) => {
     data: payments,
   };
 };
+const getAllPaymentHistory = async () => {
+  const payments = await Payment.find()
+    .populate({
+      path: "userId",
+      select: "fullname email profilePhoto",
+    })
+    .populate({
+      path: "subscriptionId",
+      select: "plan amount",
+    })
+    .sort({ createdAt: -1 })
+    .lean();
 
-/**
- * Get payment by ID
- */
+  return {
+    data: payments,
+  };
+};
+
 const getPaymentById = async (id: string, userId: string) => {
-  const payment = await Payment.findOne({ _id: id, userId: userId })
-    .populate("subscriptionId", "plan amount");
+  const payment = await Payment.findOne({ _id: id, userId: userId }).populate(
+    "subscriptionId",
+    "plan amount"
+  );
 
   if (!payment) {
     throw new AppError(status.NOT_FOUND, "Payment not found");
@@ -155,9 +208,9 @@ const getPaymentById = async (id: string, userId: string) => {
 };
 
 export const PaymentServices = {
-  createPaymentIntent,
-  handlePaymentSuccess,
-  handlePaymentFailure,
-  getPaymentHistory,
   getPaymentById,
+  createCheckoutSessionService,
+  handleStripeWebhookService,
+  getMyPaymentHistory,
+  getAllPaymentHistory,
 };

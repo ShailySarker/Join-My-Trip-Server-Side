@@ -5,8 +5,37 @@ export enum IPaymentStatus {
   COMPLETED = "COMPLETED",
   FAILED = "FAILED",
   REFUNDED = "REFUNDED",
+  EXPIRED = "EXPIRED",
 }
 
+export interface IPayment {
+  userId: mongoose.Types.ObjectId;
+  subscriptionId: mongoose.Types.ObjectId;
+  stripePaymentIntentId: string;
+  stripeCustomerId?: string;
+  amount: number;
+  currency?: string;
+  status: IPaymentStatus;
+  transactionDate?: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+// export interface IPayment {
+//   userId: mongoose.Types.ObjectId;
+//   // travelId?: mongoose.Types.ObjectId;
+//   // bookingId?: mongoose.Types.ObjectId;
+//   subscriptionId?: mongoose.Types.ObjectId;
+//   stripePaymentIntentId: string;
+//   stripeCustomerId?: string;
+//   amount: number;
+//   // currency: string;
+//   // totalPeople?: number;
+//   status: IPaymentStatus;
+//   transactionDate?: Date;
+//   createdAt?: Date;
+//   updatedAt?: Date;
+// }
 // userId: mongoose.Types.ObjectId; //subscription id , here we found
 //   travelId?: mongoose.Types.ObjectId;
 //   bookingId?: mongoose.Types.ObjectId;
@@ -17,18 +46,3 @@ export enum IPaymentStatus {
 //   //   stripeSubscriptionId?: string;
 //   //   stripeCustomerId?: string;
 //   paymentGatewayData?: any;
-export interface IPayment {
-  userId: mongoose.Types.ObjectId;
-  travelId?: mongoose.Types.ObjectId;
-  bookingId?: mongoose.Types.ObjectId;
-  subscriptionId?: mongoose.Types.ObjectId;
-  stripePaymentIntentId: string;
-  stripeCustomerId?: string;
-  amount: number;
-  currency: string;
-  totalPeople?: number;
-  status: IPaymentStatus;
-  transactionDate?: Date;
-  createdAt?: Date;
-  updatedAt?: Date;
-}

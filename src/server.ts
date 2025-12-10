@@ -4,8 +4,9 @@ import { envVars } from "./app/config/env";
 import app from "./app";
 import { seedSuperAdmin } from "./app/utils/seedSuperAdmin";
 import { updateTravelPlanStatuses } from "./app/utils/updateTravelPlanStatuses";
-import cron from 'node-cron'; 
+import cron from "node-cron";
 import { startSubscriptionCronJob } from "./app/utils/subscriptionManagement";
+import { connectRedis } from "./app/config/redis.config";
 
 let server: Server;
 
@@ -23,21 +24,21 @@ const startServer = async () => {
 };
 
 (async () => {
+  await connectRedis();
   await startServer();
   await seedSuperAdmin();
   await updateTravelPlanStatuses();
-  
+
   // Schedule travel plan status updates (runs daily at 00:00)
-  cron.schedule('0 0 * * *', async () => {
-    console.log('Scheduled: Updating travel plan statuses...');
+  cron.schedule("0 0 * * *", async () => {
+    console.log("Scheduled: Updating travel plan statuses...");
     await updateTravelPlanStatuses();
   });
-  
-  console.log('Travel plan status updater scheduled (runs daily at 00:00)');
+
+  console.log("Travel plan status updater scheduled (runs daily at 00:00)");
 
   // Start subscription expiry cron job (runs daily at 00:00)
   startSubscriptionCronJob();
-
 })();
 
 // unhandled rejection error(premiss rejection)
