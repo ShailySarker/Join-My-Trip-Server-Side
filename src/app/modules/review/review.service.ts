@@ -1,249 +1,253 @@
-import status from "http-status";
+import httpStatus from "http-status";
 import AppError from "../../errorHelpers/AppError";
-import { IReview } from "./review.interface";
 import { Review } from "./review.model";
 import { TravelPlan } from "../travelPlan/travelPlan.model";
-import { User } from "../user/user.model";
+import { IReview } from "./review.interface";
 import { ITrevelStatus } from "../travelPlan/travelPlan.interface";
+import { User } from "../user/user.model";
+import QueryBuilder from "../../utils/QueryBuilder";
 
-/**
- * Helper function to update user's average rating and review count
- */
-const updateUserRating = async (userId: string) => {
-  const reviews = await Review.find({ reviewedUserId: userId });
+const createReview = async (reviewerId: string, payload: IReview) => {
+  const { revieweeId, travelId } = payload;
 
-  const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0);
-  const averageRating = reviews.length > 0 ? totalRating / reviews.length : 0;
-
-  await User.findByIdAndUpdate(userId, {
-    averageRating: Math.round(averageRating * 10) / 10, // Round to 1 decimal
-    reviewCount: reviews.length,
-  });
-};
-
-/**
- * Create a review for a user after completing a travel plan
- */
-const createReview = async (
-  reviewerId: string,
-  payload: Partial<IReview>
-) => {
-  const { reviewedUserId, travelPlanId, rating, comment } = payload;
-
-  // 1. Validate cannot review self
-  if (reviewerId === reviewedUserId!.toString()) {
-    throw new AppError(status.BAD_REQUEST, "You cannot review yourself");
+  console.log(reviewerId, payload);
+  if (reviewerId === revieweeId.toString()) {
+    throw new AppError(httpStatus.BAD_REQUEST, "You cannot review yourself");
   }
 
-  // 2. Validate travel plan exists and is completed
-  const travelPlan = await TravelPlan.findById(travelPlanId);
+  const travelPlan = await TravelPlan.findById(travelId);
   if (!travelPlan) {
-    throw new AppError(status.NOT_FOUND, "Travel plan not found");
+    throw new AppError(httpStatus.NOT_FOUND, "Travel plan not found");
   }
 
+  // 1. Check if Travel Plan is COMPLETED
   if (travelPlan.status !== ITrevelStatus.COMPLETED) {
     throw new AppError(
-      status.BAD_REQUEST,
-      "Cannot create review - travel plan must be completed first"
+      httpStatus.BAD_REQUEST,
+      "You can only review after the trip is completed"
     );
   }
 
-  // 3. Validate reviewer was a participant
-  const isParticipant = travelPlan.participants.some(
-    (participant) => participant.toString() === reviewerId
-  );
+  // 2. Verify Involvement
+  // Collect all participant user IDs (including host)
+  const participantIds = travelPlan.participants
+    .map((p) => p.userId?.toString())
+    .filter(Boolean); // filter out undefined
+  participantIds.push(travelPlan.host.toString());
 
-  if (!isParticipant) {
+  // Check if reviewer was involved
+  if (!participantIds.includes(reviewerId)) {
     throw new AppError(
-      status.FORBIDDEN,
-      "You were not a participant in this travel plan"
+      httpStatus.FORBIDDEN,
+      "You were not a participant of this trip"
     );
   }
 
-  // 4. Validate reviewed user was also a participant
-  const isReviewedUserParticipant = travelPlan.participants.some(
-    (participant) => participant.toString() === reviewedUserId!.toString()
-  );
-
-  if (!isReviewedUserParticipant) {
+  // Check if reviewee was involved
+  if (!participantIds.includes(revieweeId.toString())) {
     throw new AppError(
-      status.BAD_REQUEST,
-      "The user you are trying to review was not a participant in this trip"
+      httpStatus.BAD_REQUEST,
+      "The user you are reviewing was not part of this trip"
     );
   }
 
-  // 5. Check for duplicate review
+  // 4. Check if already reviewed
   const existingReview = await Review.findOne({
     reviewerId,
-    reviewedUserId,
-    travelPlanId,
+    revieweeId,
+    travelId,
   });
 
   if (existingReview) {
     throw new AppError(
-      status.BAD_REQUEST,
-      "You have already reviewed this user for this travel plan"
+      httpStatus.BAD_REQUEST,
+      "You have already reviewed this user for this trip"
     );
   }
 
-  // 6. Create review
+  // 5. Create Review
   const review = await Review.create({
+    ...payload,
     reviewerId,
-    reviewedUserId,
-    travelPlanId,
-    rating,
-    comment,
   });
 
-  // 7. Update reviewed user's rating
-  await updateUserRating(reviewedUserId!.toString());
+  // 4. Update Average Rating for Reviewee
+  await updateUserAverageRating(revieweeId.toString());
 
-  const populatedReview = await Review.findById(review._id)
-    .populate("reviewerId", "fullname email profilePhoto")
-    .populate("reviewedUserId", "fullname email profilePhoto")
-    .populate("travelPlanId", "title destination startDate endDate");
-
-  return {
-    data: populatedReview,
-  };
+  return review;
 };
 
-/**
- * Update a review (only by the reviewer)
- */
 const updateReview = async (
   reviewId: string,
   reviewerId: string,
   payload: Partial<IReview>
 ) => {
-  const { rating, comment } = payload;
-
-  // 1. Find review
   const review = await Review.findById(reviewId);
+
   if (!review) {
-    throw new AppError(status.NOT_FOUND, "Review not found");
+    throw new AppError(httpStatus.NOT_FOUND, "Review not found");
   }
 
-  // 2. Validate ownership
   if (review.reviewerId.toString() !== reviewerId) {
     throw new AppError(
-      status.FORBIDDEN,
-      "You can only edit your own reviews"
+      httpStatus.FORBIDDEN,
+      "You are not authorized to update this review"
     );
   }
 
-  // 3. Update review
-  const updatedReview = await Review.findByIdAndUpdate(
-    reviewId,
-    { rating, comment },
-    { new: true, runValidators: true }
-  )
-    .populate("reviewerId", "fullname email profilePhoto")
-    .populate("reviewedUserId", "fullname email profilePhoto")
-    .populate("travelPlanId", "title destination startDate endDate");
+  const updatedReview = await Review.findByIdAndUpdate(reviewId, payload, {
+    new: true,
+  });
 
-  // 4. Update reviewed user's rating
-  await updateUserRating(review.reviewedUserId.toString());
+  if (updatedReview) {
+    await updateUserAverageRating(updatedReview.revieweeId.toString());
+  }
 
-  return {
-    data: updatedReview,
-  };
+  return updatedReview;
 };
 
-/**
- * Delete a review (only by the reviewer)
- */
 const deleteReview = async (reviewId: string, reviewerId: string) => {
-  // 1. Find review
   const review = await Review.findById(reviewId);
+
   if (!review) {
-    throw new AppError(status.NOT_FOUND, "Review not found");
+    throw new AppError(httpStatus.NOT_FOUND, "Review not found");
   }
 
-  // 2. Validate ownership
   if (review.reviewerId.toString() !== reviewerId) {
     throw new AppError(
-      status.FORBIDDEN,
-      "You can only delete your own reviews"
+      httpStatus.FORBIDDEN,
+      "You are not authorized to delete this review"
     );
   }
 
-  const reviewedUserId = review.reviewedUserId.toString();
-
-  // 3. Delete review
   await Review.findByIdAndDelete(reviewId);
+  await updateUserAverageRating(review.revieweeId.toString());
 
-  // 4. Update reviewed user's rating
-  await updateUserRating(reviewedUserId);
-
-  return {
-    message: "Review deleted successfully",
-  };
+  return review;
 };
 
-/**
- * Get all reviews for a specific user
- */
-const getUserReviews = async (userId: string) => {
-  const reviews = await Review.find({ reviewedUserId: userId })
-    .populate("reviewerId", "fullname email profilePhoto")
-    .populate("travelPlanId", "title destination startDate endDate")
-    .sort({ createdAt: -1 });
+const updateUserAverageRating = async (userId: string) => {
+  // Find all reviews for this user
+  const reviews = await Review.find({ revieweeId: userId });
 
-  return {
-    data: reviews,
-  };
+  if (reviews.length > 0) {
+    const total = reviews.reduce((sum, rev) => sum + rev.rating, 0);
+    const avg = total / reviews.length;
+    // Round to 1 decimal place
+    const roundedAvg = Math.round(avg * 10) / 10;
+
+    await User.findByIdAndUpdate(userId, {
+      averageRating: roundedAvg,
+      reviewCount: reviews.length,
+    });
+  } else {
+    await User.findByIdAndUpdate(userId, {
+      averageRating: 0,
+      reviewCount: 0,
+    });
+  }
 };
 
-/**
- * Get all reviews written by the current user (reviews I gave)
- */
-const getMyGivenReviews = async (reviewerId: string) => {
-  const reviews = await Review.find({ reviewerId })
-    .populate("reviewedUserId", "fullname email profilePhoto")
-    .populate("travelPlanId", "title destination startDate endDate")
-    .sort({ createdAt: -1 });
+const getMyGivenReviews = async (
+  userId: string,
+  query: Record<string, unknown>
+) => {
+  const reviewQuery = new QueryBuilder(
+    Review.find({ reviewerId: userId })
+      .populate("revieweeId", "fullname email profilePhoto")
+      .populate("reviewerId", "fullname email profilePhoto")
+      .populate("travelId", "title destination"),
+    query
+  )
+    .filter(["rating"])
+    .sort()
+    .paginate()
+    .fields();
 
-  return {
-    data: reviews,
-  };
+  const result = await reviewQuery.execute();
+  return result;
 };
 
-/**
- * Get all reviews received by the current user (reviews I got)
- */
-const getMyGettingReviews = async (userId: string) => {
-  const reviews = await Review.find({ reviewedUserId: userId })
-    .populate("reviewerId", "fullname email profilePhoto")
-    .populate("travelPlanId", "title destination startDate endDate")
-    .sort({ createdAt: -1 });
+const getMyReceivedReviews = async (
+  userId: string,
+  query: Record<string, unknown>
+) => {
+  const reviewQuery = new QueryBuilder(
+    Review.find({ revieweeId: userId })
+      .populate("reviewerId", "fullname email profilePhoto")
+      .populate("revieweeId", "fullname email profilePhoto")
+      .populate("travelId", "title destination"),
+    query
+  )
+    .filter(["rating"])
+    .sort()
+    .paginate()
+    .fields();
 
-  return {
-    data: reviews,
-  };
+  const result = await reviewQuery.execute();
+  return result;
 };
 
-/**
- * Get all reviews (Admin only)
- */
-const getAllReviews = async () => {
-  const reviews = await Review.find()
-    .populate("reviewerId", "fullname email profilePhoto")
-    .populate("reviewedUserId", "fullname email profilePhoto")
-    .populate("travelPlanId", "title destination startDate endDate")
-    .sort({ createdAt: -1 });
+// Get reviews for a specific user (for profile display)
+const getUserReviews = async (
+  userId: string,
+  query: Record<string, unknown>
+) => {
+  const reviewQuery = new QueryBuilder(
+    Review.find({ revieweeId: userId })
+      .populate("reviewerId", "fullname profilePhoto")
+      .populate("travelId", "title destination"),
+    query
+  )
+    .filter(["rating"])
+    .sort()
+    .paginate()
+    .fields();
 
-  return {
-    data: reviews,
-  };
+  const result = await reviewQuery.execute();
+  return result;
+};
+
+// Admin can see all reviews
+const getAllReviews = async (query: Record<string, unknown>) => {
+  const reviewQuery = new QueryBuilder(
+    Review.find()
+      .populate("reviewerId", "fullname email")
+      .populate("revieweeId", "fullname email")
+      .populate("travelId", "title"),
+    query
+  )
+    .search(["comment"])
+    .filter(["rating"])
+    .sort()
+    .paginate()
+    .fields();
+
+  const result = await reviewQuery.execute();
+  return result;
+};
+
+// Get single review by ID
+const getReviewById = async (reviewId: string) => {
+  const review = await Review.findById(reviewId)
+    .populate("reviewerId", "fullname profilePhoto")
+    .populate("revieweeId", "fullname profilePhoto")
+    .populate("travelId", "title destination");
+
+  if (!review) {
+    throw new AppError(httpStatus.NOT_FOUND, "Review not found");
+  }
+
+  return review;
 };
 
 export const ReviewServices = {
   createReview,
   updateReview,
   deleteReview,
-  getUserReviews,
   getMyGivenReviews,
-  getMyGettingReviews,
+  getMyReceivedReviews,
+  getUserReviews,
   getAllReviews,
+  getReviewById,
 };

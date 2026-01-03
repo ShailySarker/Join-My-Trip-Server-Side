@@ -114,6 +114,7 @@ export const updateUserSchema = z.object({
   age: z
     .number("Age must be a number")
     .min(18, { message: "Age must be at least 18 years" })
+    .max(50, { message: "Age must be less than 50 years" })
     .optional(),
   travelInterests: z
     .array(z.string({ message: "Travel interest must be string" }))

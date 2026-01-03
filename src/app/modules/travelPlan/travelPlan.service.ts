@@ -16,6 +16,9 @@ import {
 import { generateSlug } from "../../utils/generateSlug";
 import { deleteImageFromCloudinary } from "../../config/cloudinary.config";
 import { User } from "../user/user.model";
+import { IUserRole } from "../user/user.interface";
+import { Booking } from "../booking/booking.model";
+import { IBookingStatus } from "../booking/booking.interface";
 
 const createTravelPlan = async (
   hostId: string,
@@ -38,21 +41,47 @@ const createTravelPlan = async (
   }
 
   // Validate host has required information for participant
-  if (!hostUser.phone || !hostUser.gender) {
+  if (!hostUser.phone || !hostUser.gender || !hostUser.age) {
     throw new AppError(
       status.BAD_REQUEST,
-      "Please complete your profile (phone and gender required) before creating a travel plan"
+      "Please complete your profile setup (age, phone and gender required) before creating a travel plan"
     );
   }
 
-  // Calculate age from user profile (assuming you might have a birthdate or age field)
-  // For now, we'll require age to be sent in the payload or use a default
+  if (!hostUser.age) {
+    throw new AppError(
+      status.BAD_REQUEST,
+      "Please complete your profile (age required) before creating a travel plan"
+    );
+  }
+
+  if (hostUser.age === null) {
+    new AppError(
+      status.BAD_REQUEST,
+      "Your need to update your profile age info to create a travel plan"
+    );
+  }
+
+  if (hostUser.age < 18) {
+    throw new AppError(
+      status.BAD_REQUEST,
+      "You must be at least 18 years old to create a travel plan"
+    );
+  }
+
+  if (hostUser.age < (payload.minAge as number)) {
+    throw new AppError(
+      status.BAD_REQUEST,
+      `${hostUser.fullname} must be at least ${payload.minAge} years old to book this travel plan.`
+    );
+  }
+
   const hostParticipant: IParticipantDetails = {
     userId: hostUser._id as any, // Cast to ObjectId
     name: hostUser.fullname,
     phone: hostUser.phone,
     gender: hostUser.gender,
-    age: 25, // TODO: Calculate from user's birthdate or get from profile
+    age: hostUser.age,
   };
 
   const travelPlan = await TravelPlan.create({
@@ -65,29 +94,21 @@ const createTravelPlan = async (
   return await travelPlan.populate("host", "fullname email profilePhoto");
 };
 
-const getTravelPlanById = async (id: string) => {
-  const travelPlan = await TravelPlan.findById(id)
-    .populate("host", "fullname email profilePhoto");
-
-  if (!travelPlan) {
-    throw new AppError(status.NOT_FOUND, "Travel plan not found");
-  }
-  if (travelPlan.isApproved !== ITrevelIsApproved.APPROVED) {
-    throw new AppError(status.NOT_FOUND, "Travel plan isnot approved");
+const getMyTravelPlan = async (
+  hostId: string,
+  query: Record<string, unknown>
+) => {
+  const host = await User.findById(hostId);
+  if (!host) {
+    throw new AppError(status.NOT_FOUND, "Host user not found");
   }
 
-  return {
-    data: travelPlan,
-  };
-};
-
-const getAllTravelPlansPublic = async (query: Record<string, unknown>) => {
   const travelPlanQuery = new QueryBuilder(
     TravelPlan.find({
-      isApproved: ITrevelIsApproved.APPROVED,
-      status: ITrevelStatus.UPCOMING,
-    })
-      .populate("host", "fullname email profilePhoto") as any,
+      host: hostId,
+      // isApproved: ITrevelIsApproved.APPROVED,
+      // status: ITrevelStatus.UPCOMING,
+    }).populate("host", "fullname email profilePhoto") as any,
     query
   );
 
@@ -100,15 +121,88 @@ const getAllTravelPlansPublic = async (query: Record<string, unknown>) => {
     .fields()
     .execute();
 
+  if (!result) {
+    throw new AppError(status.NOT_FOUND, "No travel plan found");
+  }
+  return result;
+};
+
+const getTravelPlanById = async (id: string) => {
+  const travelPlan = await TravelPlan.findById(id).populate(
+    "host",
+    "fullname email profilePhoto"
+  );
+
+  if (!travelPlan) {
+    throw new AppError(status.NOT_FOUND, "Travel plan not found");
+  }
+  // if (travelPlan.isApproved !== ITrevelIsApproved.APPROVED) {
+  //   throw new AppError(status.NOT_FOUND, "Travel plan is not approved");
+  // }
+
+  return {
+    data: travelPlan,
+  };
+};
+
+// const getTravelPlanById = async (id: string, hostId: string) => {
+//   console.log(hostId);
+//   const travelPlan = await TravelPlan.findById(id).populate(
+//     "host",
+//     "fullname email profilePhoto"
+//   );
+
+//   if (!travelPlan) {
+//     throw new AppError(status.NOT_FOUND, "Travel plan not found");
+//   }
+//   if (travelPlan.isApproved !== ITrevelIsApproved.APPROVED) {
+//     if (travelPlan.host.toString() !== hostId) {
+//       console.log(travelPlan.host.toString() !== hostId);
+//       throw new AppError(status.NOT_FOUND, "Travel plan is not approved");
+//     }
+//   }
+
+//   return {
+//     data: travelPlan,
+//   };
+// };
+
+const getAllTravelPlansPublic = async (query: Record<string, unknown>) => {
+  const travelPlanQuery = new QueryBuilder(
+    TravelPlan.find({
+      isApproved: ITrevelIsApproved.APPROVED,
+      status: ITrevelStatus.UPCOMING,
+    }).populate("host", "fullname email profilePhoto") as any,
+    query
+  );
+
+  const result = await travelPlanQuery
+    .search(searchableFields)
+    .filter(filterableFields)
+    .filterByRange() // Filter by budget and date ranges
+    .sort(sortableFields)
+    .paginate()
+    .fields()
+    .execute();
+
+  console.log(result, "----------result--------------");
+
   return result;
 };
 
 const getAllTravelPlansAdmin = async (query: Record<string, unknown>) => {
+  // const admin = await User.findById(adminId);
+
+  // if (!admin || admin.role !== IUserRole.ADMIN || IUserRole.SUPER_ADMIN) {
+  //   throw new AppError(
+  //     status.FORBIDDEN,
+  //     "You are not authorized to access this route"
+  //   );
+  // }
   const travelPlanQuery = new QueryBuilder(
     TravelPlan.find({
-      status: ITrevelStatus.UPCOMING,
-    })
-      .populate("host", "fullname email profilePhoto") as any,
+      // status: ITrevelStatus.UPCOMING,
+    }).populate("host", "fullname email profilePhoto") as any,
     query
   );
 
@@ -136,17 +230,16 @@ const approveTravelPlan = async (id: string, isApproved: ITrevelIsApproved) => {
       id,
       { isApproved, status: ITrevelStatus.CANCELLED },
       { new: true }
-    )
-      .populate("host", "fullname email profilePhoto");
+    ).populate("host", "fullname email profilePhoto");
 
     return { data: updatedPlan };
   } else if (isApproved === ITrevelIsApproved.APPROVED) {
     const updatedPlan = await TravelPlan.findByIdAndUpdate(
       id,
+      // { isApproved },
       { isApproved, status: ITrevelStatus.UPCOMING },
       { new: true }
-    )
-      .populate("host", "fullname email profilePhoto");
+    ).populate("host", "fullname email profilePhoto");
     return { data: updatedPlan };
   }
 };
@@ -158,6 +251,7 @@ const cancelTravelPlan = async (id: string, userId: string) => {
     throw new AppError(status.NOT_FOUND, "Travel plan not found");
   }
 
+  const booking = await Booking.findById({ travelId: id });
   // Check authorization: only host or admin can cancel
   const isHost = travelPlan.host.toString() === userId;
 
@@ -195,10 +289,15 @@ const cancelTravelPlan = async (id: string, userId: string) => {
 
   const updatedPlan = await TravelPlan.findByIdAndUpdate(
     id,
-    { status: ITrevelStatus.CANCELLED },
+    { status: ITrevelStatus.CANCELLED, isApproved: ITrevelIsApproved.REJECTED },
     { new: true }
-  )
-    .populate("host", "fullname email profilePhoto");
+  ).populate("host", "fullname email profilePhoto");
+
+  // Cancel all bookings associated with this travel plan
+  await Booking.updateMany(
+    { travelId: id },
+    { bookingStatus: IBookingStatus.CANCELLED }
+  );
 
   return { data: updatedPlan };
 };
@@ -270,8 +369,7 @@ const updateTravelPlan = async (
     id,
     { $set: payload },
     { new: true, runValidators: true }
-  )
-    .populate("host", "fullname email profilePhoto");
+  ).populate("host", "fullname email profilePhoto");
 
   return { data: updatedPlan };
 };
@@ -379,6 +477,17 @@ const removeParticipantFromTravelPlan = async (
     );
   }
 
+  // Cannot remove the host from the participant list
+  if (
+    participant.userId &&
+    participant.userId.toString() === travelPlan.host.toString()
+  ) {
+    throw new AppError(
+      status.BAD_REQUEST,
+      "Cannot remove the host from the participant list"
+    );
+  }
+
   // Remove participant
   const updatedPlan = await TravelPlan.findByIdAndUpdate(
     travelPlanId,
@@ -391,6 +500,7 @@ const removeParticipantFromTravelPlan = async (
 
 export const TravelPlanServices = {
   createTravelPlan,
+  getMyTravelPlan,
   getTravelPlanById,
   getAllTravelPlansPublic,
   getAllTravelPlansAdmin,

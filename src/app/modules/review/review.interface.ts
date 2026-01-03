@@ -1,10 +1,10 @@
-import mongoose from "mongoose";
+import { Types } from "mongoose";
 
 export interface IReview {
-  reviewerId: mongoose.Types.ObjectId; // who give the review
-  reviewedUserId: mongoose.Types.ObjectId; // who get the review
-  travelPlanId: mongoose.Types.ObjectId; // for which plan
-  rating: number;
+  revieweeId: Types.ObjectId; // User receiving the review
+  reviewerId: Types.ObjectId; // User giving the review
+  travelId: Types.ObjectId; // The trip context
+  rating: number; // 1 to 5
   comment: string;
   createdAt?: Date;
   updatedAt?: Date;

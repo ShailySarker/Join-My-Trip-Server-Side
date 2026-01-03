@@ -101,13 +101,17 @@ const getAllUsers = catchAsync(
 const getMyFollowers = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const decodedToken = req.user as JwtPayload;
-    const result = await UserServices.getMyFollowers(decodedToken.userId);
+    const result = await UserServices.getMyFollowers(
+      decodedToken.userId,
+      req.query
+    );
 
     sendResponse(res, {
       success: true,
       statusCode: status.OK,
       message: "Followers retrieved successfully",
       data: result.data,
+      meta: result.meta,
     });
   }
 );
@@ -115,13 +119,17 @@ const getMyFollowers = catchAsync(
 const getMyFollowings = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const decodedToken = req.user as JwtPayload;
-    const result = await UserServices.getMyFollowings(decodedToken.userId);
+    const result = await UserServices.getMyFollowings(
+      decodedToken.userId,
+      req.query
+    );
 
     sendResponse(res, {
       success: true,
       statusCode: status.OK,
       message: "Followings retrieved successfully",
       data: result.data,
+      meta: result.meta,
     });
   }
 );
@@ -143,6 +151,34 @@ const toggleFollow = catchAsync(
   }
 );
 
+const getUserDashboardStats = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const decodedToken = req.user as JwtPayload;
+    const result = await UserServices.getUserDashboardStats(decodedToken.userId);
+
+    sendResponse(res, {
+      success: true,
+      statusCode: status.OK,
+      message: "Dashboard statistics retrieved successfully",
+      data: result.data,
+    });
+  }
+);
+
+const getAdminDashboardStats = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { getAdminDashboardStats: getStats } = await import("./admin.stats.service");
+    const result = await getStats();
+
+    sendResponse(res, {
+      success: true,
+      statusCode: status.OK,
+      message: "Admin dashboard statistics retrieved successfully",
+      data: result.data,
+    });
+  }
+);
+
 export const UserControllers = {
   createUser,
   getSingleUser,
@@ -153,4 +189,6 @@ export const UserControllers = {
   getMyFollowers,
   getMyFollowings,
   toggleFollow,
+  getUserDashboardStats,
+  getAdminDashboardStats,
 };

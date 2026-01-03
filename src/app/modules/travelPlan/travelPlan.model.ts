@@ -98,7 +98,12 @@ const travelPlanSchema = new Schema<ITravelPlan>(
           type: String,
           required: true,
           trim: true,
-          match: [/^(\+8801|01)[3-9]\d{8}$/, "Please provide a valid Bangladesh phone number"],
+          unique: true,
+          match: [
+            /^(?:01\d{9})$/,
+            "Please provide a valid Bangladesh phone number",
+          ],
+          // match: [/^(\+8801|01)[3-9]\d{8}$/, "Please provide a valid Bangladesh phone number"],
         },
         gender: {
           type: String,

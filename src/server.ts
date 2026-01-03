@@ -47,6 +47,7 @@ process.on("unhandledRejection", (err) => {
     "Unhandled Rejection detected ......... Server shutting down...",
     err
   );
+  console.log("Server time:", new Date().toISOString());
 
   if (server) {
     server.close(() => {

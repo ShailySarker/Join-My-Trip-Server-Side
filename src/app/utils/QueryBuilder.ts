@@ -50,11 +50,16 @@ class QueryBuilder<T> {
     // Remove reserved fields
     const excludeFields = [
       "search",
-      "sort",
       "sortBy",
+      "sortOrder",
+      "sort",
       "limit",
       "page",
       "fields",
+      "amount",
+      "totalPeople",
+      "maxGuest",
+      "minAge",
       "minBudget",
       "maxBudget",
       "startDate",
@@ -159,8 +164,8 @@ class QueryBuilder<T> {
    * @param sortableFields - Optional array of field names that are allowed to be sorted
    */
   sort(sortableFields?: string[]): this {
-    let sortField = (this.query?.sort as string) || "createdAt";
-    const sortOrder = (this.query?.sortBy as string) || "asc";
+    let sortField = (this.query?.sortBy as string) || "createdAt";
+    const sortOrder = (this.query?.sortOrder as string) || "asc";
 
     // If sortableFields is provided, validate the sort field
     if (sortableFields && sortableFields.length > 0) {

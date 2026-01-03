@@ -14,7 +14,11 @@ router.post(
   BookingControllers.createBooking
 );
 
-router.get("/", checkAuth(IUserRole.ADMIN, IUserRole.SUPER_ADMIN), BookingControllers.getAllBookings);
+router.get(
+  "/",
+  checkAuth(IUserRole.ADMIN, IUserRole.SUPER_ADMIN),
+  BookingControllers.getAllBookings
+);
 
 router.get(
   "/my-bookings",

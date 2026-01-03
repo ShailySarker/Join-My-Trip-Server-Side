@@ -16,7 +16,7 @@ router.post(
 
 router.get(
   "/",
-  checkAuth(IUserRole.USER, IUserRole.ADMIN, IUserRole.SUPER_ADMIN),
+  // checkAuth(IUserRole.USER, IUserRole.ADMIN, IUserRole.SUPER_ADMIN),
   SubscriptionControllers.getAllSubscriptions
 );
 

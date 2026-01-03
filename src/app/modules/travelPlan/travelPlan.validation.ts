@@ -4,27 +4,23 @@ import { IUserGender } from "../user/user.interface";
 
 // Participant details validation schema
 export const participantDetailsSchema = z.object({
+  userId: z.string().optional(),
+  bookingId: z.string().optional(),
   name: z
-    .string({ message: "Participant name is required" })
+    .string({ message: "Name is required" })
     .min(2, "Name must be at least 2 characters")
-    .max(100, "Name cannot exceed 100 characters")
-    .trim(),
+    .max(100, "Name is too long"),
   phone: z
-    .string({ message: "Phone number is required" })
-    .regex(
-      /^(\+8801|01)[3-9]\d{8}$/,
-      "Invalid Bangladesh phone number format. Use +8801XXXXXXXXX or 01XXXXXXXXX"
-    )
-    .trim(),
-  gender: z.nativeEnum(IUserGender, {
-    message: "Gender must be either MALE or FEMALE",
-  }),
+    .string({ message: "Phone Number must be string" })
+    .regex(/^(?:01\d{9})$/, {
+      message: "Phone number must be valid for Bangladesh. Format:01XXXXXXXXX",
+    }),
+  gender: z.nativeEnum(IUserGender, { error: "Gender is required" }),
   age: z
     .number({ message: "Age is required" })
-    .int("Age must be an integer")
-    .min(5, "Age must be at least 5 years")
-    .max(120, "Age cannot exceed 120 years"),
-  userId: z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid user ID format").optional(),
+    .int("Age must be a whole number")
+    .min(5, "Age must be at least 5")
+    .max(50, "Age must be less than 50"),
 });
 
 export const createTravelPlanSchema = z
@@ -89,7 +85,20 @@ export const createTravelPlanSchema = z
       .default(18)
       .optional(),
   })
-  .refine((data) => data.endDate > data.startDate, {
+  .refine(
+    (data) => {
+      const start = new Date(data.startDate);
+      const minDate = new Date();
+      minDate.setDate(minDate.getDate() + 0);
+      minDate.setHours(0, 0, 0, 0);
+      return start >= minDate;
+    },
+    {
+      message: "Start date must be at least 7 days from today",
+      path: ["startDate"],
+    }
+  )
+  .refine((data) => data.endDate >= data.startDate, {
     message: "End date must be after start date",
     path: ["endDate"],
   });
@@ -161,28 +170,47 @@ export const updateTravelPlanSchema = z
   })
   .refine(
     (data) => {
-      // If both dates are provided, endDate must be after startDate
-      if (data.startDate && data.endDate) {
-        return data.endDate > data.startDate;
+      // If startDate is being updated, it must be at least 7 days from today
+      if (data.startDate) {
+        const start = new Date(data.startDate);
+        const minDate = new Date();
+        minDate.setDate(minDate.getDate() + 7);
+        minDate.setHours(0, 0, 0, 0);
+        return start >= minDate;
       }
       return true;
     },
     {
-      message: "End date must be after start date",
+      message: "Start date must be at least 7 days from today",
+      path: ["startDate"],
+    }
+  )
+  .refine(
+    (data) => {
+      // If both dates are provided, endDate must be after or equal to startDate
+      if (data.startDate && data.endDate) {
+        return data.endDate >= data.startDate;
+      }
+      return true;
+    },
+    {
+      message: "End date must be after or equal to start date",
       path: ["endDate"],
     }
   );
 
 // Add participant to travel plan validation
-export const addParticipantSchema = z.object({
-  body: participantDetailsSchema,
-});
+export const addParticipantSchema = participantDetailsSchema;
 
 // Remove participant validation
 export const removeParticipantSchema = z.object({
   params: z.object({
-    travelPlanId: z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid travel plan ID"),
-    phone: z.string().regex(/^(\+8801|01)[3-9]\d{8}$/, "Invalid phone number format"),
+    travelPlanId: z
+      .string()
+      .regex(/^[0-9a-fA-F]{24}$/, "Invalid travel plan ID"),
+    phone: z.string().regex(/^(?:01\d{9})$/, {
+      message: "Phone number must be valid for Bangladesh. Format:01XXXXXXXXX",
+    }),
   }),
 });
 

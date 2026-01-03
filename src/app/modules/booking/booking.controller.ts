@@ -8,13 +8,15 @@ import { JwtPayload } from "jsonwebtoken";
 const createBooking = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const decodedToken = req.user as JwtPayload;
-    const result = await BookingServices.createBooking(decodedToken.userId, req.body);
-
+    const result = await BookingServices.createBooking(
+      decodedToken.userId,
+      req.body
+    );
     sendResponse(res, {
       success: true,
       statusCode: status.CREATED,
       message: "Booking created successfully",
-      data: result.data,
+      data: result,
     });
   }
 );
@@ -36,7 +38,10 @@ const getAllBookings = catchAsync(
 const getMyBookings = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const decodedToken = req.user as JwtPayload;
-    const result = await BookingServices.getMyBookings(decodedToken.userId, req.query);
+    const result = await BookingServices.getMyBookings(
+      decodedToken.userId,
+      req.query
+    );
 
     sendResponse(res, {
       success: true,
@@ -47,7 +52,6 @@ const getMyBookings = catchAsync(
     });
   }
 );
-
 
 const getBookingById = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {

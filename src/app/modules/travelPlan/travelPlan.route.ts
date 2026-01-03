@@ -16,10 +16,15 @@ router.post(
   TravelPlanControllers.createTravelPlan
 );
 
+router.get(
+  "/my-travel-plans",
+  checkAuth(IUserRole.USER),
+  TravelPlanControllers.getMyTravelPlan
+);
 router.get("/", TravelPlanControllers.getAllTravelPlansPublic);
 
 router.get(
-  "/",
+  "/all-travel-plans",
   checkAuth(IUserRole.ADMIN, IUserRole.SUPER_ADMIN),
   TravelPlanControllers.getAllTravelPlansAdmin
 );
@@ -48,7 +53,7 @@ router.patch(
 
 // Participant Management Routes (Pre-booking)
 // Add participant to travel plan (host only, before booking)
-router.post(
+router.patch(
   "/:id/participants",
   checkAuth(IUserRole.USER),
   validatedRequest(TravelPlanSchemaValidation.addParticipantSchema),
@@ -56,7 +61,7 @@ router.post(
 );
 
 // Remove participant from travel plan (host only, before booking)
-router.delete(
+router.patch(
   "/:id/participants/:phone",
   checkAuth(IUserRole.USER),
   TravelPlanControllers.removeParticipant

@@ -38,6 +38,18 @@ router.get(
   UserControllers.getMyFollowings
 );
 
+router.get(
+  "/dashboard-stats",
+  checkAuth(IUserRole.USER),
+  UserControllers.getUserDashboardStats
+);
+
+router.get(
+  "/admin-dashboard-stats",
+  checkAuth(IUserRole.ADMIN, IUserRole.SUPER_ADMIN),
+  UserControllers.getAdminDashboardStats
+);
+
 router.post(
   "/follow/:id",
   checkAuth(...Object.values(IUserRole)),
@@ -46,7 +58,7 @@ router.post(
 
 router.get(
   "/",
-  checkAuth(...Object.values(IUserRole)),
+  // checkAuth(...Object.values(IUserRole)),
   UserControllers.getAllUsers
 );
 
@@ -55,6 +67,7 @@ router.get(
   checkAuth(...Object.values(IUserRole)),
   UserControllers.getSingleUser
 );
+
 router.delete(
   "/:id",
   checkAuth(IUserRole.ADMIN, IUserRole.SUPER_ADMIN),

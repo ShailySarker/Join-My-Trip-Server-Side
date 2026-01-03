@@ -29,10 +29,34 @@ const createTravelPlan = catchAsync(
   }
 );
 
+const getMyTravelPlan = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const decodedToken = req.user as JwtPayload;
+    // console.log(decodedToken);
+    const result = await TravelPlanServices.getMyTravelPlan(
+      decodedToken.userId as string,
+      req.query
+    );
+
+    sendResponse(res, {
+      success: true,
+      statusCode: status.OK,
+      message: "My travel plan retrieved successfully",
+      meta: result.meta,
+      data: result.data,
+    });
+  }
+);
+
 const getTravelPlanById = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const { id } = req.params;
-    const result = await TravelPlanServices.getTravelPlanById(id);
+    // const decodedToken = req.user as JwtPayload;
+    // console.log(id, decodedToken);
+    const result = await TravelPlanServices.getTravelPlanById(
+      id
+      // decodedToken.userId as string
+    );
 
     sendResponse(res, {
       success: true,
@@ -58,7 +82,11 @@ const getAllTravelPlansPublic = catchAsync(
 );
 const getAllTravelPlansAdmin = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    const result = await TravelPlanServices.getAllTravelPlansAdmin(req.query);
+    const decodedToken = req.user as JwtPayload;
+    const result = await TravelPlanServices.getAllTravelPlansAdmin(
+      req.query
+      // decodedToken.userId as string
+    );
 
     sendResponse(res, {
       success: true,
@@ -175,6 +203,7 @@ const removeParticipant = catchAsync(
 
 export const TravelPlanControllers = {
   createTravelPlan,
+  getMyTravelPlan,
   getTravelPlanById,
   getAllTravelPlansPublic,
   getAllTravelPlansAdmin,
@@ -183,4 +212,4 @@ export const TravelPlanControllers = {
   updateTravelPlan,
   addParticipant,
   removeParticipant,
- };
+};

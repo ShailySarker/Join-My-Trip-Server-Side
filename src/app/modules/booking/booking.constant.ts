@@ -1,7 +1,11 @@
 /**
  * Searchable fields for booking queries
  */
-export const bookingSearchableFields: string[] = [];
+export const bookingSearchableFields: string[] = ["title", "city"];
+// export const bookingSearchableFields: string[] = [
+//   "travelId.title",
+//   "travelId.destination.city",
+// ];
 
 /**
  * Filterable fields for booking queries

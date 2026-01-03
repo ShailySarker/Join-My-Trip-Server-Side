@@ -1,126 +1,127 @@
-import { Request, Response, NextFunction } from "express";
-import { catchAsync } from "../../utils/catchAsync";
-import { sendResponse } from "../../utils/sendResponse";
-import status from "http-status";
+import { Request, Response } from "express";
+import httpStatus from "http-status";
 import { ReviewServices } from "./review.service";
 import { JwtPayload } from "jsonwebtoken";
+import { catchAsync } from "../../utils/catchAsync";
+import { sendResponse } from "../../utils/sendResponse";
 
-const createReview = catchAsync(
-  async (req: Request, res: Response, next: NextFunction) => {
-    const decodedToken = req.user as JwtPayload;
-    const reviewerId = decodedToken.userId;
+const createReview = catchAsync(async (req: Request, res: Response) => {
+  const decodedToken = req.user as JwtPayload;
+  const result = await ReviewServices.createReview(
+    decodedToken.userId as string,
+    req.body
+  );
+  sendResponse(res, {
+    statusCode: httpStatus.CREATED,
+    success: true,
+    message: "Review created successfully",
+    data: result,
+  });
+});
 
-    const result = await ReviewServices.createReview(reviewerId, req.body);
+const updateReview = catchAsync(async (req: Request, res: Response) => {
+  const decodedToken = req.user as JwtPayload;
+  const { id } = req.params;
 
-    sendResponse(res, {
-      success: true,
-      statusCode: status.CREATED,
-      message: "Review created successfully",
-      data: result.data,
-    });
-  }
-);
+  const result = await ReviewServices.updateReview(
+    id,
+    decodedToken.userId as string,
+    req.body
+  );
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Review updated successfully",
+    data: result,
+  });
+});
 
-const updateReview = catchAsync(
-  async (req: Request, res: Response, next: NextFunction) => {
-    const decodedToken = req.user as JwtPayload;
-    const reviewerId = decodedToken.userId;
-    const { id } = req.params;
+const deleteReview = catchAsync(async (req: Request, res: Response) => {
+  const decodedToken = req.user as JwtPayload;
+  const { id } = req.params;
+  const result = await ReviewServices.deleteReview(
+    id,
+    decodedToken.userId as string
+  );
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Review deleted successfully",
+    data: result,
+  });
+});
 
-    const result = await ReviewServices.updateReview(id, reviewerId, req.body);
+const getMyGivenReviews = catchAsync(async (req: Request, res: Response) => {
+  const decodedToken = req.user as JwtPayload;
+  const result = await ReviewServices.getMyGivenReviews(
+    decodedToken.userId as string,
+    req.query
+  );
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Given reviews retrieved successfully",
+    meta: result.meta,
+    data: result.data,
+  });
+});
 
-    sendResponse(res, {
-      success: true,
-      statusCode: status.OK,
-      message: "Review updated successfully",
-      data: result.data,
-    });
-  }
-);
+const getMyReceivedReviews = catchAsync(async (req: Request, res: Response) => {
+  const decodedToken = req.user as JwtPayload;
+  const result = await ReviewServices.getMyReceivedReviews(
+    decodedToken.userId as string,
+    req.query
+  );
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Received reviews retrieved successfully",
+    meta: result.meta,
+    data: result.data,
+  });
+});
 
-const deleteReview = catchAsync(
-  async (req: Request, res: Response, next: NextFunction) => {
-    const decodedToken = req.user as JwtPayload;
-    const reviewerId = decodedToken.userId;
-    const { id } = req.params;
+const getUserReviews = catchAsync(async (req: Request, res: Response) => {
+  const { userId } = req.params;
+  const result = await ReviewServices.getUserReviews(userId, req.query);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "User reviews retrieved successfully",
+    meta: result.meta,
+    data: result.data,
+  });
+});
 
-    const result = await ReviewServices.deleteReview(id, reviewerId);
+const getAllReviews = catchAsync(async (req: Request, res: Response) => {
+  const result = await ReviewServices.getAllReviews(req.query);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "All reviews retrieved successfully",
+    meta: result.meta,
+    data: result.data,
+  });
+});
 
-    sendResponse(res, {
-      success: true,
-      statusCode: status.OK,
-      message: result.message,
-      data: null,
-    });
-  }
-);
-
-const getUserReviews = catchAsync(
-  async (req: Request, res: Response, next: NextFunction) => {
-    const { userId } = req.params;
-
-    const result = await ReviewServices.getUserReviews(userId);
-
-    sendResponse(res, {
-      success: true,
-      statusCode: status.OK,
-      message: "User reviews retrieved successfully",
-      data: result.data,
-    });
-  }
-);
-
-const getMyGivenReviews = catchAsync(
-  async (req: Request, res: Response, next: NextFunction) => {
-    const decodedToken = req.user as JwtPayload;
-    const reviewerId = decodedToken.userId;
-
-    const result = await ReviewServices.getMyGivenReviews(reviewerId);
-
-    sendResponse(res, {
-      success: true,
-      statusCode: status.OK,
-      message: "Reviews you gave retrieved successfully",
-      data: result.data,
-    });
-  }
-);
-
-const getMyGettingReviews = catchAsync(
-  async (req: Request, res: Response, next: NextFunction) => {
-    const decodedToken = req.user as JwtPayload;
-    const userId = decodedToken.userId;
-
-    const result = await ReviewServices.getMyGettingReviews(userId);
-
-    sendResponse(res, {
-      success: true,
-      statusCode: status.OK,
-      message: "Reviews you received retrieved successfully",
-      data: result.data,
-    });
-  }
-);
-
-const getAllReviews = catchAsync(
-  async (req: Request, res: Response, next: NextFunction) => {
-    const result = await ReviewServices.getAllReviews();
-
-    sendResponse(res, {
-      success: true,
-      statusCode: status.OK,
-      message: "All reviews retrieved successfully",
-      data: result.data,
-    });
-  }
-);
+const getReviewById = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const result = await ReviewServices.getReviewById(id);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Review retrieved successfully",
+    data: result,
+  });
+});
 
 export const ReviewControllers = {
   createReview,
   updateReview,
   deleteReview,
-  getUserReviews,
   getMyGivenReviews,
-  getMyGettingReviews,
+  getMyReceivedReviews,
+  getUserReviews,
   getAllReviews,
+  getReviewById,
 };

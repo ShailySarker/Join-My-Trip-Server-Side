@@ -11,6 +11,7 @@ export const filterableFields = [
   "travelType",
   "interests",
   "status",
+  "isApproved",
   "destination.city",
   "destination.country",
 ];
