@@ -100,6 +100,11 @@ exports.updateUserSchema = zod_1.default.object({
     })
         .optional(),
     gender: zod_1.default.nativeEnum(user_interface_1.IUserGender).optional(),
+    age: zod_1.default
+        .number("Age must be a number")
+        .min(18, { message: "Age must be at least 18 years" })
+        .max(50, { message: "Age must be less than 50 years" })
+        .optional(),
     travelInterests: zod_1.default
         .array(zod_1.default.string({ message: "Travel interest must be string" }))
         .optional(),
@@ -110,7 +115,8 @@ exports.updateUserSchema = zod_1.default.object({
         .string()
         .min(20, { message: "Bio must be at least 20 characters" })
         .max(500, { message: "Bio cannot exceed 500 characters" })
-        .optional(),
+        // .optional()
+        .or(zod_1.default.literal("")),
     currentLocation: zod_1.default
         .object({
         city: zod_1.default

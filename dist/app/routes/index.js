@@ -6,6 +6,10 @@ const user_route_1 = require("../modules/user/user.route");
 const auth_route_1 = require("../modules/auth/auth.route");
 const otp_route_1 = require("../modules/otp/otp.route");
 const travelPlan_route_1 = require("../modules/travelPlan/travelPlan.route");
+const subscription_route_1 = require("../modules/subscription/subscription.route");
+const payment_route_1 = require("../modules/payment/payment.route");
+const booking_route_1 = require("../modules/booking/booking.route");
+const review_route_1 = require("../modules/review/review.route");
 exports.router = (0, express_1.Router)();
 const moduleRoutes = [
     {
@@ -23,6 +27,22 @@ const moduleRoutes = [
     {
         path: "/travel-plan",
         route: travelPlan_route_1.TravelPlanRouters,
+    },
+    {
+        path: "/subscription",
+        route: subscription_route_1.SubscriptionRouters,
+    },
+    {
+        path: "/payment",
+        route: payment_route_1.PaymentRouters,
+    },
+    {
+        path: "/bookings",
+        route: booking_route_1.BookingRoutes,
+    },
+    {
+        path: "/reviews",
+        route: review_route_1.ReviewRoutes,
     },
 ];
 moduleRoutes.forEach((route) => {

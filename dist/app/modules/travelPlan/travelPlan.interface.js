@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ITrevelStatus = exports.ITrevelInterest = exports.ITravelType = void 0;
+exports.ITrevelIsApproved = exports.ITrevelStatus = exports.ITrevelInterest = exports.ITravelType = void 0;
 var ITravelType;
 (function (ITravelType) {
     ITravelType["SOLO"] = "SOLO";
@@ -36,3 +36,9 @@ var ITrevelStatus;
     ITrevelStatus["COMPLETED"] = "COMPLETED";
     ITrevelStatus["CANCELLED"] = "CANCELLED";
 })(ITrevelStatus || (exports.ITrevelStatus = ITrevelStatus = {}));
+var ITrevelIsApproved;
+(function (ITrevelIsApproved) {
+    ITrevelIsApproved["PENDING"] = "PENDING";
+    ITrevelIsApproved["APPROVED"] = "APPROVED";
+    ITrevelIsApproved["REJECTED"] = "REJECTED";
+})(ITrevelIsApproved || (exports.ITrevelIsApproved = ITrevelIsApproved = {}));

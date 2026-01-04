@@ -33,35 +33,26 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Booking = void 0;
+exports.Subscription = void 0;
 const mongoose_1 = __importStar(require("mongoose"));
 const subscription_interface_1 = require("./subscription.interface");
 const subscriptionSchema = new mongoose_1.Schema({
     plan: {
         type: String,
         enum: Object.values(subscription_interface_1.ISubscriptionPlan),
-        default: subscription_interface_1.ISubscriptionPlan.FREE,
     },
-    status: {
-        type: String,
-        enum: Object.values(subscription_interface_1.ISubscriptionPlanStatus),
-        default: subscription_interface_1.ISubscriptionPlanStatus.ACTIVE,
-    },
+    // status: {
+    //   type: String,
+    //   enum: Object.values(ISubscriptionPlanStatus),
+    //   default: ISubscriptionPlanStatus.WAITING,
+    // },
     amount: {
         type: Number,
         required: true,
         min: 0,
     },
-    startDate: {
-        type: Date,
-        default: null,
-    },
-    endDate: {
-        type: Date,
-        default: null,
-    },
 }, {
     timestamps: true,
     versionKey: false,
 });
-exports.Booking = mongoose_1.default.model("Subscription", subscriptionSchema);
+exports.Subscription = mongoose_1.default.model("Subscription", subscriptionSchema);

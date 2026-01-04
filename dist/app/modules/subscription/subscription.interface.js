@@ -3,7 +3,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ISubscriptionPlanStatus = exports.ISubscriptionPlan = void 0;
 var ISubscriptionPlan;
 (function (ISubscriptionPlan) {
-    ISubscriptionPlan["FREE"] = "FREE";
     ISubscriptionPlan["MONTHLY"] = "MONTHLY";
     ISubscriptionPlan["YEARLY"] = "YEARLY";
 })(ISubscriptionPlan || (exports.ISubscriptionPlan = ISubscriptionPlan = {}));

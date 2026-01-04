@@ -36,6 +36,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.User = void 0;
 const mongoose_1 = __importStar(require("mongoose"));
 const user_interface_1 = require("./user.interface");
+const subscription_interface_1 = require("../subscription/subscription.interface");
 const userSchema = new mongoose_1.Schema({
     fullname: { type: String, required: true },
     email: {
@@ -50,10 +51,10 @@ const userSchema = new mongoose_1.Schema({
         type: String,
         enum: Object.values(user_interface_1.IUserRole),
         default: user_interface_1.IUserRole.USER,
-        // required: true,
     },
     phone: { type: String, trim: true },
     gender: { type: String, enum: Object.values(user_interface_1.IUserGender) },
+    age: { type: Number, min: 18 },
     profilePhoto: { type: String, default: null },
     bio: { type: String, default: "" },
     travelInterests: { type: [String], default: [] },
@@ -64,11 +65,27 @@ const userSchema = new mongoose_1.Schema({
     },
     averageRating: { type: Number, default: 0, min: 0, max: 5 },
     reviewCount: { type: Number, default: 0 },
-    subscription: {
-        type: mongoose_1.default.Schema.Types.ObjectId,
-        ref: "Subscription",
-        // required: true,
+    totalProfileViews: { type: Number, default: 0 },
+    myFollowers: { type: [String], default: [] },
+    myFollowings: { type: [String], default: [] },
+    subscriptionInfo: {
+        subscriptionId: {
+            type: mongoose_1.default.Schema.Types.ObjectId,
+            ref: "Subscription",
+        },
+        plan: {
+            type: String,
+            enum: Object.values(subscription_interface_1.ISubscriptionPlan),
+        },
+        status: {
+            type: String,
+            enum: Object.values(subscription_interface_1.ISubscriptionPlanStatus),
+            // default: ISubscriptionPlanStatus.ACTIVE,
+        },
+        startDate: Date,
+        expireDate: Date,
     },
+    stripeCustomerId: { type: String },
     isVerified: { type: Boolean, default: false },
     isDeleted: { type: Boolean, default: false },
 }, {

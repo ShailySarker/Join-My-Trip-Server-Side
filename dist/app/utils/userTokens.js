@@ -21,6 +21,7 @@ const http_status_1 = __importDefault(require("http-status"));
 const createUserTokens = (user) => {
     const jwtPayload = {
         userId: user._id,
+        fullname: user.fullname,
         email: user.email,
         role: user.role,
     };
@@ -43,6 +44,7 @@ const createNewAccessTokenWithRefreshToken = (refreshToken) => __awaiter(void 0,
     }
     const jwtPayload = {
         userId: isUserExist._id,
+        fullname: isUserExist.fullname,
         email: isUserExist.email,
         role: isUserExist.role,
     };

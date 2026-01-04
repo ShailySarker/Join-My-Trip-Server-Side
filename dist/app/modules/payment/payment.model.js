@@ -36,45 +36,104 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.Payment = void 0;
 const mongoose_1 = __importStar(require("mongoose"));
 const payment_interface_1 = require("./payment.interface");
+/**
+ 
+const paymentSchema = new Schema<IPayment>(
+  {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    travelId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "TravelPlan",
+      // required: true,
+    },
+    bookingId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Booking",
+      // required: true,
+    },
+    subscriptionId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Subscription",
+      required: true,
+    },
+    amount: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+    totalPeople: {
+      type: Number,
+      // required: true,
+      min: 1,
+    },
+    status: {
+      type: String,
+      enum: Object.values(IPaymentStatus),
+      default: IPaymentStatus.PENDING,
+    },
+    paymentGatewayData: {
+      type: Schema.Types.Mixed,
+      default: null,
+    },
+  },
+  {
+    timestamps: true,
+    versionKey: false,
+  }
+);
+
+ */
 const paymentSchema = new mongoose_1.Schema({
     userId: {
         type: mongoose_1.default.Schema.Types.ObjectId,
         ref: "User",
         required: true,
     },
-    travelId: {
-        type: mongoose_1.default.Schema.Types.ObjectId,
-        ref: "TravelPlan",
-        // required: true,
-    },
-    bookingId: {
-        type: mongoose_1.default.Schema.Types.ObjectId,
-        ref: "Booking",
-        // required: true,
-    },
+    // travelId: {
+    //   type: mongoose.Schema.Types.ObjectId,
+    //   ref: "TravelPlan",
+    // },
+    // bookingId: {
+    //   type: mongoose.Schema.Types.ObjectId,
+    //   ref: "Booking",
+    // },
     subscriptionId: {
         type: mongoose_1.default.Schema.Types.ObjectId,
         ref: "Subscription",
         required: true,
+    },
+    stripePaymentIntentId: {
+        type: String,
+        required: true,
+        unique: true,
+    },
+    stripeCustomerId: {
+        type: String,
     },
     amount: {
         type: Number,
         required: true,
         min: 0,
     },
-    totalPeople: {
-        type: Number,
-        // required: true,
-        min: 1,
+    currency: {
+        type: String,
+        default: "usd",
     },
+    // totalPeople: {
+    //   type: Number,
+    //   min: 1,
+    // },
     status: {
         type: String,
         enum: Object.values(payment_interface_1.IPaymentStatus),
         default: payment_interface_1.IPaymentStatus.PENDING,
     },
-    paymentGatewayData: {
-        type: mongoose_1.Schema.Types.Mixed,
-        default: null,
+    transactionDate: {
+        type: Date,
     },
 }, {
     timestamps: true,

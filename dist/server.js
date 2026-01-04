@@ -16,6 +16,10 @@ const mongoose_1 = __importDefault(require("mongoose"));
 const env_1 = require("./app/config/env");
 const app_1 = __importDefault(require("./app"));
 const seedSuperAdmin_1 = require("./app/utils/seedSuperAdmin");
+const updateTravelPlanStatuses_1 = require("./app/utils/updateTravelPlanStatuses");
+const node_cron_1 = __importDefault(require("node-cron"));
+const subscriptionManagement_1 = require("./app/utils/subscriptionManagement");
+const redis_config_1 = require("./app/config/redis.config");
 let server;
 const startServer = () => __awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -30,12 +34,23 @@ const startServer = () => __awaiter(void 0, void 0, void 0, function* () {
     }
 });
 (() => __awaiter(void 0, void 0, void 0, function* () {
+    yield (0, redis_config_1.connectRedis)();
     yield startServer();
     yield (0, seedSuperAdmin_1.seedSuperAdmin)();
+    yield (0, updateTravelPlanStatuses_1.updateTravelPlanStatuses)();
+    // Schedule travel plan status updates (runs daily at 00:00)
+    node_cron_1.default.schedule("0 0 * * *", () => __awaiter(void 0, void 0, void 0, function* () {
+        console.log("Scheduled: Updating travel plan statuses...");
+        yield (0, updateTravelPlanStatuses_1.updateTravelPlanStatuses)();
+    }));
+    console.log("Travel plan status updater scheduled (runs daily at 00:00)");
+    // Start subscription expiry cron job (runs daily at 00:00)
+    (0, subscriptionManagement_1.startSubscriptionCronJob)();
 }))();
 // unhandled rejection error(premiss rejection)
 process.on("unhandledRejection", (err) => {
     console.log("Unhandled Rejection detected ......... Server shutting down...", err);
+    console.log("Server time:", new Date().toISOString());
     if (server) {
         server.close(() => {
             process.exit(1);

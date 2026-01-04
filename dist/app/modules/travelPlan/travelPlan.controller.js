@@ -20,7 +20,12 @@ const http_status_1 = __importDefault(require("http-status"));
 const createTravelPlan = (0, catchAsync_1.catchAsync)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     const decodedToken = req.user;
     const hostId = decodedToken.userId;
-    const result = yield travelPlan_service_1.TravelPlanServices.createTravelPlan(hostId, req.body);
+    const file = req.file;
+    const payload = Object.assign({}, req.body);
+    if (file && file.path) {
+        payload.image = file.path; // Cloudinary URL
+    }
+    const result = yield travelPlan_service_1.TravelPlanServices.createTravelPlan(hostId, payload);
     (0, sendResponse_1.sendResponse)(res, {
         success: true,
         statusCode: http_status_1.default.CREATED,
@@ -28,9 +33,25 @@ const createTravelPlan = (0, catchAsync_1.catchAsync)((req, res, next) => __awai
         data: result,
     });
 }));
+const getMyTravelPlan = (0, catchAsync_1.catchAsync)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    const decodedToken = req.user;
+    // console.log(decodedToken);
+    const result = yield travelPlan_service_1.TravelPlanServices.getMyTravelPlan(decodedToken.userId, req.query);
+    (0, sendResponse_1.sendResponse)(res, {
+        success: true,
+        statusCode: http_status_1.default.OK,
+        message: "My travel plan retrieved successfully",
+        meta: result.meta,
+        data: result.data,
+    });
+}));
 const getTravelPlanById = (0, catchAsync_1.catchAsync)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     const { id } = req.params;
-    const result = yield travelPlan_service_1.TravelPlanServices.getTravelPlanById(id);
+    // const decodedToken = req.user as JwtPayload;
+    // console.log(id, decodedToken);
+    const result = yield travelPlan_service_1.TravelPlanServices.getTravelPlanById(id
+    // decodedToken.userId as string
+    );
     (0, sendResponse_1.sendResponse)(res, {
         success: true,
         statusCode: http_status_1.default.OK,
@@ -48,8 +69,92 @@ const getAllTravelPlansPublic = (0, catchAsync_1.catchAsync)((req, res, next) =>
         meta: result.meta,
     });
 }));
+const getAllTravelPlansAdmin = (0, catchAsync_1.catchAsync)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    const decodedToken = req.user;
+    const result = yield travelPlan_service_1.TravelPlanServices.getAllTravelPlansAdmin(req.query
+    // decodedToken.userId as string
+    );
+    (0, sendResponse_1.sendResponse)(res, {
+        success: true,
+        statusCode: http_status_1.default.OK,
+        message: "Travel plans retrieved successfully",
+        data: result.data,
+        meta: result.meta,
+    });
+}));
+const approveTravelPlan = (0, catchAsync_1.catchAsync)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    const { id } = req.params;
+    const { isApproved } = req.body;
+    const result = yield travelPlan_service_1.TravelPlanServices.approveTravelPlan(id, isApproved);
+    (0, sendResponse_1.sendResponse)(res, {
+        success: true,
+        statusCode: http_status_1.default.OK,
+        message: "Travel plan approved successfully",
+        data: result,
+    });
+}));
+const cancelTravelPlan = (0, catchAsync_1.catchAsync)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    const { id } = req.params;
+    const decodedToken = req.user;
+    const userId = decodedToken.userId;
+    const result = yield travelPlan_service_1.TravelPlanServices.cancelTravelPlan(id, userId);
+    (0, sendResponse_1.sendResponse)(res, {
+        success: true,
+        statusCode: http_status_1.default.OK,
+        message: "Travel plan cancelled successfully",
+        data: result.data,
+    });
+}));
+const updateTravelPlan = (0, catchAsync_1.catchAsync)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    const { id } = req.params;
+    const decodedToken = req.user;
+    const userId = decodedToken.userId;
+    const file = req.file;
+    const payload = Object.assign({}, req.body);
+    if (file && file.path) {
+        payload.image = file.path; // Cloudinary URL
+    }
+    const result = yield travelPlan_service_1.TravelPlanServices.updateTravelPlan(id, userId, payload);
+    (0, sendResponse_1.sendResponse)(res, {
+        success: true,
+        statusCode: http_status_1.default.OK,
+        message: "Travel plan updated successfully",
+        data: result.data,
+    });
+}));
+const addParticipant = (0, catchAsync_1.catchAsync)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    const { id } = req.params; // travel plan id
+    const decodedToken = req.user;
+    const userId = decodedToken.userId;
+    const result = yield travelPlan_service_1.TravelPlanServices.addParticipantToTravelPlan(id, userId, req.body);
+    (0, sendResponse_1.sendResponse)(res, {
+        success: true,
+        statusCode: http_status_1.default.OK,
+        message: "Participant added successfully",
+        data: result.data,
+    });
+}));
+const removeParticipant = (0, catchAsync_1.catchAsync)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    const { id, phone } = req.params; // travel plan id and participant phone
+    const decodedToken = req.user;
+    const userId = decodedToken.userId;
+    const result = yield travelPlan_service_1.TravelPlanServices.removeParticipantFromTravelPlan(id, phone, userId);
+    (0, sendResponse_1.sendResponse)(res, {
+        success: true,
+        statusCode: http_status_1.default.OK,
+        message: "Participant removed successfully",
+        data: result.data,
+    });
+}));
 exports.TravelPlanControllers = {
     createTravelPlan,
+    getMyTravelPlan,
     getTravelPlanById,
     getAllTravelPlansPublic,
+    getAllTravelPlansAdmin,
+    approveTravelPlan,
+    cancelTravelPlan,
+    updateTravelPlan,
+    addParticipant,
+    removeParticipant,
 };

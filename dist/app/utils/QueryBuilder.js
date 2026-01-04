@@ -38,7 +38,23 @@ class QueryBuilder {
     filter(filterableFields) {
         const queryObj = Object.assign({}, this.query);
         // Remove reserved fields
-        const excludeFields = ["search", "sort", "sortBy", "limit", "page", "fields"];
+        const excludeFields = [
+            "search",
+            "sortBy",
+            "sortOrder",
+            "sort",
+            "limit",
+            "page",
+            "fields",
+            "amount",
+            "totalPeople",
+            "maxGuest",
+            "minAge",
+            "minBudget",
+            "maxBudget",
+            "startDate",
+            "endDate",
+        ];
         excludeFields.forEach((field) => delete queryObj[field]);
         // Build filter object
         const filterObj = {};
@@ -67,6 +83,58 @@ class QueryBuilder {
         return this;
     }
     /**
+     * Filter by range values (budget range and date range)
+     * Query params:
+     *   - minBudget: minimum budget (inclusive)
+     *   - maxBudget: maximum budget (inclusive)
+     *   - startDate: filter for trips starting from this date (inclusive)
+     *   - endDate: filter for trips ending by this date (inclusive)
+     * Examples:
+     *   - ?minBudget=1000&maxBudget=5000
+     *   - ?startDate=2024-06-01&endDate=2024-12-31
+     */
+    filterByRange() {
+        var _a, _b, _c, _d;
+        const rangeFilter = {};
+        // Budget range filtering
+        const minBudget = (_a = this.query) === null || _a === void 0 ? void 0 : _a.minBudget;
+        const maxBudget = (_b = this.query) === null || _b === void 0 ? void 0 : _b.maxBudget;
+        if (minBudget || maxBudget) {
+            rangeFilter.budget = {};
+            if (minBudget) {
+                rangeFilter.budget.$gte = Number(minBudget);
+            }
+            if (maxBudget) {
+                rangeFilter.budget.$lte = Number(maxBudget);
+            }
+        }
+        // Date range filtering
+        const startDate = (_c = this.query) === null || _c === void 0 ? void 0 : _c.startDate;
+        const endDate = (_d = this.query) === null || _d === void 0 ? void 0 : _d.endDate;
+        if (startDate || endDate) {
+            // Filter for trips that overlap with the specified date range
+            if (startDate && endDate) {
+                // Trips that start before or on endDate AND end after or on startDate
+                rangeFilter.$and = [
+                    { startDate: { $lte: new Date(endDate) } },
+                    { endDate: { $gte: new Date(startDate) } },
+                ];
+            }
+            else if (startDate) {
+                // Trips that end on or after the startDate
+                rangeFilter.endDate = { $gte: new Date(startDate) };
+            }
+            else if (endDate) {
+                // Trips that start on or before the endDate
+                rangeFilter.startDate = { $lte: new Date(endDate) };
+            }
+        }
+        if (Object.keys(rangeFilter).length > 0) {
+            this.modelQuery = this.modelQuery.find(rangeFilter);
+        }
+        return this;
+    }
+    /**
      * Sort results by specified field and order
      * Query params:
      *   - sort: field name (e.g., sort=averageRating)
@@ -76,8 +144,8 @@ class QueryBuilder {
      */
     sort(sortableFields) {
         var _a, _b;
-        let sortField = ((_a = this.query) === null || _a === void 0 ? void 0 : _a.sort) || "createdAt";
-        const sortOrder = ((_b = this.query) === null || _b === void 0 ? void 0 : _b.sortBy) || "asc";
+        let sortField = ((_a = this.query) === null || _a === void 0 ? void 0 : _a.sortBy) || "createdAt";
+        const sortOrder = ((_b = this.query) === null || _b === void 0 ? void 0 : _b.sortOrder) || "asc";
         // If sortableFields is provided, validate the sort field
         if (sortableFields && sortableFields.length > 0) {
             // Check if the requested sort field is in the allowed list

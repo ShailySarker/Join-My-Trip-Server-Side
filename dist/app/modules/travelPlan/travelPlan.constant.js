@@ -13,6 +13,7 @@ exports.filterableFields = [
     "travelType",
     "interests",
     "status",
+    "isApproved",
     "destination.city",
     "destination.country",
 ];

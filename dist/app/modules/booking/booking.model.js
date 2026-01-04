@@ -36,7 +36,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.Booking = void 0;
 const mongoose_1 = __importStar(require("mongoose"));
 const booking_interface_1 = require("./booking.interface");
-const payment_interface_1 = require("../payment/payment.interface");
 const bookingSchema = new mongoose_1.Schema({
     userId: {
         type: mongoose_1.default.Schema.Types.ObjectId,
@@ -48,16 +47,55 @@ const bookingSchema = new mongoose_1.Schema({
         ref: "TravelPlan",
         required: true,
     },
+    participants: [
+        {
+            userId: {
+                type: mongoose_1.default.Schema.Types.ObjectId,
+                ref: "User",
+                required: false,
+            },
+            bookingId: {
+                type: mongoose_1.default.Schema.Types.ObjectId,
+                ref: "Booking",
+                required: false,
+            },
+            name: {
+                type: String,
+                required: true,
+                trim: true,
+            },
+            phone: {
+                type: String,
+                required: true,
+                trim: true,
+                match: [
+                    /^(?:01\d{9})$/,
+                    "Please provide a valid Bangladesh phone number",
+                ],
+                // match: [/^(\+8801|01)[3-9]\d{8}$/, "Please provide a valid Bangladesh phone number"],
+            },
+            gender: {
+                type: String,
+                enum: ["MALE", "FEMALE"],
+                required: true,
+            },
+            age: {
+                type: Number,
+                required: true,
+                min: 5,
+            },
+        },
+    ],
     bookingStatus: {
         type: String,
         enum: Object.values(booking_interface_1.IBookingStatus),
         default: booking_interface_1.IBookingStatus.BOOKED,
     },
-    paymentStatus: {
-        type: String,
-        enum: Object.values(payment_interface_1.IPaymentStatus),
-        default: payment_interface_1.IPaymentStatus.PENDING,
-    },
+    // paymentStatus: {
+    //   type: String,
+    //   enum: Object.values(IPaymentStatus),
+    //   default: IPaymentStatus.PENDING,
+    // },
     amount: {
         type: Number,
         required: true,

@@ -11,7 +11,10 @@ const notFound_1 = __importDefault(require("./app/middlewares/notFound"));
 const cors_1 = __importDefault(require("cors"));
 const env_1 = require("./app/config/env");
 const routes_1 = require("./app/routes");
+const payment_controller_1 = require("./app/modules/payment/payment.controller");
+const body_parser_1 = __importDefault(require("body-parser"));
 const app = (0, express_1.default)();
+app.post("/webhook", body_parser_1.default.raw({ type: "application/json" }), payment_controller_1.PaymentControllers.handleWebhook);
 app.use((0, cookie_parser_1.default)());
 app.use(express_1.default.json()); //for json data parse
 app.set("trust proxy", 1); //all external live links's proxy will trust

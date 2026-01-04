@@ -14,8 +14,8 @@ const catchAsync_1 = require("../../utils/catchAsync");
 const otp_service_1 = require("./otp.service");
 const sendResponse_1 = require("../../utils/sendResponse");
 const sendOTP = (0, catchAsync_1.catchAsync)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { email, name } = req.body;
-    yield otp_service_1.OTPService.sendOTP(email, name);
+    const { email, fullname } = req.body;
+    yield otp_service_1.OTPService.sendOTP(email, fullname);
     (0, sendResponse_1.sendResponse)(res, {
         statusCode: 200,
         success: true,

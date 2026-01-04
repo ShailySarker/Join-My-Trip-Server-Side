@@ -50,7 +50,7 @@ const travelPlanSchema = new mongoose_1.Schema({
         trim: true,
     },
     description: { type: String, required: true },
-    images: { type: [String], default: [] },
+    image: { type: String, required: true },
     // budgetRange: {
     //   min: {
     //     type: Number,
@@ -107,11 +107,49 @@ const travelPlanSchema = new mongoose_1.Schema({
     },
     participants: [
         {
-            type: mongoose_1.default.Schema.Types.ObjectId,
-            ref: "User",
-            default: [],
+            userId: {
+                type: mongoose_1.default.Schema.Types.ObjectId,
+                ref: "User",
+                required: false,
+            },
+            bookingId: {
+                type: mongoose_1.default.Schema.Types.ObjectId,
+                ref: "Booking",
+                required: false,
+            },
+            name: {
+                type: String,
+                required: true,
+                trim: true,
+            },
+            phone: {
+                type: String,
+                required: true,
+                trim: true,
+                unique: true,
+                match: [
+                    /^(?:01\d{9})$/,
+                    "Please provide a valid Bangladesh phone number",
+                ],
+                // match: [/^(\+8801|01)[3-9]\d{8}$/, "Please provide a valid Bangladesh phone number"],
+            },
+            gender: {
+                type: String,
+                enum: ["MALE", "FEMALE"],
+                required: true,
+            },
+            age: {
+                type: Number,
+                required: true,
+                min: 5,
+            },
         },
     ],
+    isApproved: {
+        type: String,
+        enum: Object.values(travelPlan_interface_1.ITrevelIsApproved),
+        default: travelPlan_interface_1.ITrevelIsApproved.PENDING,
+    },
 }, {
     timestamps: true,
     versionKey: false,
