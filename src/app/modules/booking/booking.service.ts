@@ -595,16 +595,3 @@ export const BookingServices = {
   addParticipantsToBooking,
   removeParticipantFromBooking,
 };
-
-// 1) For public-
-// a) can see all travelPlan(card - with proper searching, filtering, sorting with proper pagination), single travelplan details(for booking he have to login and take subscription)
-
-// 2) for User-
-// a) travelPlan: only a login and subscription based user can create travelPlan, update own travelPlan before admin approve, can cancel before/ after approving, can see all travelPlan(in table- with proper searching, filtering, sorting with proper pagination), single travelplan details, own created travelPlan(in card- with proper searching, filtering, sorting with proper pagination), add participate, remove participate
-// b) Booking: only a login and subscription based user can create booking, can see own booking(in table- with proper searching, filtering, sorting with proper pagination) with single booking details, cancel own booking, add and remove participate for his any particular booking
-// c) review:  only a login and subscription based user after completed traveling with another subscription based user, can give each other review, update and delete his given review. he can see his given and recieved both reviews also. i any user profile , his recieved review will show and according to overall recieved rating , average rating will update in his profile
-
-// 3) for admin an superAdmin-
-// a) review--can see all review(card)
-// b) booking--can see all booking(in table), single one also
-// c) travelPlan- see all tour and approve(in table- with proper searching, filtering, sorting with proper pagination),
