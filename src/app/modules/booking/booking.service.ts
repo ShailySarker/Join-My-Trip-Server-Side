@@ -118,6 +118,31 @@ const createBooking = async (userId: string, payload: Partial<IBooking>) => {
     );
   }
 
+  // Check if any travel plan already booked for this time range
+  const userBookings = await Booking.find({
+    userId,
+    bookingStatus: { $ne: "CANCELLED" },
+  }).populate("travelId");
+
+  const newStart = new Date(travelPlan.startDate).getTime();
+  const newEnd = new Date(travelPlan.endDate).getTime();
+
+  for (const booking of userBookings) {
+    const existingPlan = booking.travelId as any;
+    if (existingPlan && existingPlan.startDate && existingPlan.endDate) {
+      const existingStart = new Date(existingPlan.startDate).getTime();
+      const existingEnd = new Date(existingPlan.endDate).getTime();
+
+      // Check for overlap
+      if (newStart <= existingEnd && newEnd >= existingStart) {
+        throw new AppError(
+          status.BAD_REQUEST,
+          `You already have a travel plan booked for this time range: ${existingPlan.title}`
+        );
+      }
+    }
+  }
+
   // Create booking first (without bookingId in participants)
   const booking = await Booking.create({
     userId,

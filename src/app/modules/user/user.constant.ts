@@ -23,4 +23,5 @@ export const sortableFields = [
   "reviewCount",
   "createdAt",
   "updatedAt",
+  "totalProfileViews",
 ];
