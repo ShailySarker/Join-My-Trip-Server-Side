@@ -27,11 +27,11 @@
     "@types/passport": "^1.0.17",
     "@types/passport-local": "^1.0.38",
     "eslint": "^9.39.1",
-    "ts-node-dev": "^2.0.0",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.48.0"
   },
   "dependencies": {
+    "ts-node-dev": "^2.0.0",
     "bcryptjs": "^3.0.3",
     "body-parser": "^2.2.1",
     "cloudinary": "^1.41.3",
