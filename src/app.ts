@@ -17,6 +17,7 @@ app.post(
   bodyParser.raw({ type: "application/json" }),
   PaymentControllers.handleWebhook
 );
+
 app.use(cookieParser());
 app.use(express.json()); //for json data parse
 app.set("trust proxy", 1); //all external live links's proxy will trust
