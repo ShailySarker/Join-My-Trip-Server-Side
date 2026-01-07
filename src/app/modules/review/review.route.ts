@@ -54,7 +54,7 @@ router.get(
 // Get all reviews (Admin only)
 router.get(
   "/",
-  checkAuth(IUserRole.ADMIN, IUserRole.SUPER_ADMIN),
+  // checkAuth(IUserRole.ADMIN, IUserRole.SUPER_ADMIN),
   ReviewControllers.getAllReviews
 );
 

@@ -185,8 +185,6 @@ const getAllTravelPlansPublic = async (query: Record<string, unknown>) => {
     .fields()
     .execute();
 
-  console.log(result, "----------result--------------");
-
   return result;
 };
 
