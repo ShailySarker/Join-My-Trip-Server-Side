@@ -27,18 +27,22 @@ const startServer = async () => {
   await connectRedis();
   await startServer();
   await seedSuperAdmin();
-  await updateTravelPlanStatuses();
+  await updateTravelPlanStatuses(); // Run once on startup
 
-  // Schedule travel plan status updates (runs daily at 00:00)
-  cron.schedule("0 0 * * *", async () => {
-    console.log("Scheduled: Updating travel plan statuses...");
-    await updateTravelPlanStatuses();
-  });
+  // NOTE: Internal cron jobs are commented out for Render Free Tier.
+  // We use external triggers (Render Cron Jobs) hitting endpoints in app.ts instead.
+  // This prevents the job from dying when the server sleeps.
 
-  console.log("Travel plan status updater scheduled (runs daily at 00:00)");
+  // Schedule travel plan status updates (runs every hour to be more accurate)
+  // cron.schedule("0 * * * *", async () => {
+  //   // console.log("Scheduled: Updating travel plan statuses...");
+  //   await updateTravelPlanStatuses();
+  // });
 
-  // Start subscription expiry cron job (runs daily at 00:00)
-  startSubscriptionCronJob();
+  // console.log("Travel plan status updater scheduled (runs hourly)");
+
+  // Start subscription expiry cron job (already handles its own schedule)
+  // startSubscriptionCronJob();
 })();
 
 // unhandled rejection error(premiss rejection)

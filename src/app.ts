@@ -3,12 +3,14 @@ import cookieParser from "cookie-parser";
 import httpStatus from "http-status";
 import { globalErrorHandler } from "./app/middlewares/globalErrorHandler";
 import notFound from "./app/middlewares/notFound";
-import passport from "passport";
 import cors from "cors";
 import { envVars } from "./app/config/env";
 import { router } from "./app/routes";
 import { PaymentControllers } from "./app/modules/payment/payment.controller";
 import bodyParser from "body-parser";
+import { checkSubscriptionExpiry, startSubscriptionCronJob, checkSubscriptionReminders } from "./app/utils/subscriptionManagement";
+import { updateTravelPlanStatuses } from "./app/utils/updateTravelPlanStatuses";
+import cron from "node-cron";
 
 const app = express();
 
@@ -29,6 +31,43 @@ app.use(
     credentials: true,
   })
 );
+
+
+// =========================================================
+// CRON JOB ENDPOINTS (For Render Free Tier)
+// Use these URLs in Render's Cron Job dashboard
+// =========================================================
+
+// 1. Daily Travel Plan Status Update (Schedule: 0 0 * * *)
+app.get("/api/v1/cron/travel-status", async (req, res) => {
+  try {
+    console.log("CRON: Updating travel plan statuses...");
+    await updateTravelPlanStatuses();
+    
+    // Also check for subscription reminders daily
+    console.log("CRON: Checking subscription reminders...");
+    await checkSubscriptionReminders();
+
+    // Return minimal response to avoid "Response data too big" error
+    return res.status(200).send("OK");
+  } catch (e) {
+    console.error("CRON Error:", e);
+    return res.status(500).send("FAILED");
+  }
+});
+
+// 2. Hourly Subscription Expiry Check (Schedule: 0 * * * *)
+app.get("/api/v1/cron/subscription-check", async (req, res) => {
+  try {
+    console.log("CRON: Checking subscription expiry...");
+    await checkSubscriptionExpiry();
+    // Return minimal response to avoid "Response data too big" error
+    return res.status(200).send("OK");
+  } catch (e) {
+    console.error("CRON Error:", e);
+    return res.status(500).send("FAILED");
+  }
+});
 
 app.use("/api/v1/", router);
 

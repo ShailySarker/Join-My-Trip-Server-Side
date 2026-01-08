@@ -84,6 +84,50 @@ const createTravelPlan = async (
     age: hostUser.age,
   };
 
+  // Check for overlapping non-cancelled travel plans where user is HOST
+  const newStart = new Date(payload.startDate!).getTime();
+  const newEnd = new Date(payload.endDate!).getTime();
+
+  const overlappingHostedPlans = await TravelPlan.find({
+    host: hostId,
+    status: { $ne: ITrevelStatus.CANCELLED },
+  });
+
+  for (const plan of overlappingHostedPlans) {
+    const start = new Date(plan.startDate).getTime();
+    const end = new Date(plan.endDate).getTime();
+
+    // Check for overlap
+    if (newStart <= end && newEnd >= start) {
+      throw new AppError(
+        status.BAD_REQUEST,
+        `You are already hosting a travel plan during this time range: ${plan.title}`
+      );
+    }
+  }
+
+  // Check for overlapping bookings where user is PARTICIPANT
+  const userBookings = await Booking.find({
+    userId: hostId,
+    bookingStatus: { $ne: "CANCELLED" },
+  }).populate("travelId");
+
+  for (const booking of userBookings) {
+    const existingPlan = booking.travelId as any;
+    if (existingPlan && existingPlan.startDate && existingPlan.endDate) {
+      const existingStart = new Date(existingPlan.startDate).getTime();
+      const existingEnd = new Date(existingPlan.endDate).getTime();
+
+      // Check for overlap
+      if (newStart <= existingEnd && newEnd >= existingStart) {
+        throw new AppError(
+          status.BAD_REQUEST,
+          `You already have a travel plan booked for this time range: ${existingPlan.title}`
+        );
+      }
+    }
+  }
+
   const travelPlan = await TravelPlan.create({
     ...payload,
     host: hostId,

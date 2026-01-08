@@ -143,6 +143,25 @@ const createBooking = async (userId: string, payload: Partial<IBooking>) => {
     }
   }
 
+  // Check if user is hosting any travel plan during this time range
+  const hostedPlans = await TravelPlan.find({
+    host: userId,
+    status: { $ne: ITrevelStatus.CANCELLED },
+  });
+
+  for (const plan of hostedPlans) {
+    const existingStart = new Date(plan.startDate).getTime();
+    const existingEnd = new Date(plan.endDate).getTime();
+
+    // Check for overlap
+    if (newStart <= existingEnd && newEnd >= existingStart) {
+      throw new AppError(
+        status.BAD_REQUEST,
+        `You are hosting a travel plan during this time range: ${plan.title}`
+      );
+    }
+  }
+
   // Create booking first (without bookingId in participants)
   const booking = await Booking.create({
     userId,
