@@ -18,17 +18,18 @@ export const checkSubscriptionExpiry = async () => {
     });
 
     if (expiredUsers.length > 0) {
-      // Update all expired subscriptions
-      const updatePromises = expiredUsers.map(async (user) => {
-        return await User.findByIdAndUpdate(user._id, {
+      // Optmized: Update all expired subscriptions in one go
+      const expiredUserIds = expiredUsers.map((user) => user._id);
+
+      await User.updateMany(
+        { _id: { $in: expiredUserIds } },
+        {
           $set: {
             "subscriptionInfo.status": ISubscriptionPlanStatus.EXPIRED,
-            "subscriptionInfo.expireDate": null, // Clear expire date since it's expired
+            "subscriptionInfo.expireDate": null, 
           },
-        });
-      });
-
-      await Promise.all(updatePromises);
+        }
+      );
 
       console.log(
         `✅ ${expiredUsers.length} subscription(s) marked as expired.`
@@ -37,7 +38,7 @@ export const checkSubscriptionExpiry = async () => {
       // Also update corresponding payments if needed
       await Payment.updateMany(
         {
-          userId: { $in: expiredUsers.map((u) => u._id) },
+          userId: { $in: expiredUserIds },
           status: IPaymentStatus.COMPLETED,
         },
         {

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Response to your inquiry</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 5px; }
+        .header { background-color: #f4f4f4; padding: 10px; text-align: center; border-bottom: 1px solid #ddd; }
+        .content { padding: 20px; }
+        .response { background-color: #f9f9f9; padding: 15px; border-left: 4px solid #007bff; margin: 15px 0; }
+        .footer { text-align: center; margin-top: 20px; font-size: 0.8em; color: #777; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>Update on your inquiry</h2>
+        </div>
+        <div class="content">
+            <p>Dear <%= name %>,</p>
+            <p>Thank you for contacting us regarding "<strong><%= subject %></strong>".</p>
+            
+            <p>We are writing to update you that the status of your inquiry has been changed to: <strong><%= status %></strong>.</p>
+            
+            <% if (adminResponse) { %>
+            <div class="response">
+                <strong>Our Response:</strong><br>
+                <%= adminResponse %>
+            </div>
+            <% } %>
+            
+            <p>If you have any further questions, please reply to this email.</p>
+            
+            <p>Best regards,<br>The Join My Trip Team</p>
+        </div>
+        <div class="footer">
+            <p>&copy; <%= new Date().getFullYear() %> Join My Trip. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

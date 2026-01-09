@@ -89,8 +89,8 @@ export const createTravelPlanSchema = z
     (data) => {
       const start = new Date(data.startDate);
       const minDate = new Date();
-      minDate.setDate(minDate.getDate() + 0);
-      minDate.setHours(0, 0, 0, 0);
+      minDate.setDate(minDate.getDate() + 7); // Start date must be at least 7 days from today
+      minDate.setHours(0, 0, 0, 0); // Normalize time
       return start >= minDate;
     },
     {

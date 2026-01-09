@@ -5,7 +5,7 @@ export const createContactSchema = z.object({
     .string({
       message: "Name is required",
     })
-    .min(2, "Name must be at least 2 characters"),
+    .min(3, "Name must be at least 3 characters"),
   email: z
     .string({
       message: "Email is required",
@@ -24,10 +24,8 @@ export const createContactSchema = z.object({
 });
 
 export const updateContactStatusSchema = z.object({
-  body: z.object({
-    status: z.enum(["PENDING", "IN_PROGRESS", "RESOLVED"], {
-      message: "Status is required",
-    }),
-    adminResponse: z.string().optional(),
+  status: z.enum(["PENDING", "IN_PROGRESS", "RESOLVED"], {
+    message: "Status is required",
   }),
+  adminResponse: z.string().optional(),
 });
