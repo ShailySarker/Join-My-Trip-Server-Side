@@ -13,6 +13,10 @@ import {
   sortableFields,
 } from "./user.constant";
 import { ISubscriptionPlan } from "../subscription/subscription.interface";
+import { TravelPlan } from "../travelPlan/travelPlan.model";
+import { ITrevelStatus } from "../travelPlan/travelPlan.interface";
+import { Booking } from "../booking/booking.model";
+import { IBookingStatus } from "../booking/booking.interface";
 
 const createUser = async (payload: Partial<IUser>) => {
   const { fullname, email, password, ...rest } = payload;
@@ -84,17 +88,104 @@ const getSingleUser = async (id: string, viewerId?: string) => {
 };
 
 const deleteSingleUser = async (id: string) => {
-  const user = await User.findOneAndUpdate(
-    { _id: id, isDeleted: false }, // find only active user
-    { isDeleted: true }, // mark as deleted
-    { new: true } // return updated user
-  );
+  const user = await User.findById(id);
 
   if (!user) {
     throw new AppError(status.NOT_FOUND, "User not found");
   }
 
-  return { data: user };
+  // 1. Check if user has active subscription
+  if (
+    user.subscriptionInfo?.plan &&
+    user.subscriptionInfo.status === "ACTIVE" &&
+    user.subscriptionInfo.expireDate &&
+    new Date(user.subscriptionInfo.expireDate) > new Date()
+  ) {
+    throw new AppError(
+      status.BAD_REQUEST,
+      "Cannot delete user with an active subscription."
+    );
+  }
+
+
+  // 2. Check if user is hosting any ONGOING travel plan
+  const ongoingHostedPlans = await TravelPlan.findOne({
+    host: id,
+    status: ITrevelStatus.ONGOING,
+  });
+
+  if (ongoingHostedPlans) {
+    throw new AppError(
+      status.BAD_REQUEST,
+      "Cannot delete user who is hosting an ongoing travel plan."
+    );
+  }
+
+  // 3. Check if user is a participant in any ONGOING travel plan (via Bookings or direct participant check)
+  // Usually, being a participant implies having a booking.
+  // We check bookings that are BOOKED for plans that are ONGOING.
+  // Or check TravelPlans where participants.userId == id AND status == ONGOING.
+
+  const ongoingParticipation = await TravelPlan.findOne({
+    "participants.userId": id,
+    status: ITrevelStatus.ONGOING,
+  });
+
+  if (ongoingParticipation) {
+    throw new AppError(
+      status.BAD_REQUEST,
+      "Cannot delete user who is participating in an ongoing travel plan."
+    );
+  }
+
+  // --- Deletion Process ---
+
+  // 4. Cancel all UPCOMING travel plans created by this user
+  const hostedPlans = await TravelPlan.find({
+    host: id,
+    status: ITrevelStatus.UPCOMING,
+  });
+
+  for (const plan of hostedPlans) {
+    // Mark plan as CANCELLED
+    await TravelPlan.findByIdAndUpdate(plan._id, {
+      status: ITrevelStatus.CANCELLED,
+    });
+
+    // Cancel all bookings for this plan
+    await Booking.updateMany(
+      { travelId: plan._id },
+      { bookingStatus: IBookingStatus.CANCELLED }
+    );
+  }
+
+  // 5. Cancel all bookings made BY this user for other plans
+  // And remove them from the participants list of those plans
+  const userBookings = await Booking.find({
+    userId: id,
+    bookingStatus: IBookingStatus.BOOKED,
+  });
+
+  for (const booking of userBookings) {
+    // Cancel the booking
+    await Booking.findByIdAndUpdate(booking._id, {
+      bookingStatus: IBookingStatus.CANCELLED,
+    });
+
+    // Remove from TravelPlan participants
+    await TravelPlan.findByIdAndUpdate(booking.travelId, {
+      $pull: { participants: { userId: id } },
+    });
+  }
+
+  // 6. Finally, soft delete the user
+  const deletedUser = await User.findOneAndUpdate(
+    { _id: id, isDeleted: false },
+    { isDeleted: true },
+    { new: true }
+  );
+
+  return { data: deletedUser };
 };
 
 const getMe = async (userId: string) => {

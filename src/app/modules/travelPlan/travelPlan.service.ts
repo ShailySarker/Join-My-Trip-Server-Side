@@ -76,17 +76,32 @@ const createTravelPlan = async (
     );
   }
 
-  const hostParticipant: IParticipantDetails = {
-    userId: hostUser._id as any, // Cast to ObjectId
-    name: hostUser.fullname,
-    phone: hostUser.phone,
-    gender: hostUser.gender,
-    age: hostUser.age,
-  };
+  // Check for overlapping non-cancelled travel plans where user is HOST
+  // Validate dates: Start date must be at least 7 days from today
+  const minStartDate = new Date();
+  minStartDate.setDate(minStartDate.getDate() + 7);
+  minStartDate.setHours(0, 0, 0, 0);
+
+  const providedStartDate = new Date(payload.startDate!);
+  if (providedStartDate < minStartDate) {
+    throw new AppError(
+      status.BAD_REQUEST,
+      "Start date must be at least 7 days from today"
+    );
+  }
+
+  // Validate dates: End date must be after Start date
+  const providedEndDate = new Date(payload.endDate!);
+  if (providedEndDate < providedStartDate) {
+    throw new AppError(
+      status.BAD_REQUEST,
+      "End date must be after start date"
+    );
+  }
 
   // Check for overlapping non-cancelled travel plans where user is HOST
-  const newStart = new Date(payload.startDate!).getTime();
-  const newEnd = new Date(payload.endDate!).getTime();
+  const newStart = providedStartDate.getTime();
+  const newEnd = providedEndDate.getTime();
 
   const overlappingHostedPlans = await TravelPlan.find({
     host: hostId,
@@ -105,6 +120,14 @@ const createTravelPlan = async (
       );
     }
   }
+
+  const hostParticipant: IParticipantDetails = {
+    userId: hostUser._id as any, // Cast to ObjectId
+    name: hostUser.fullname,
+    phone: hostUser.phone,
+    gender: hostUser.gender,
+    age: hostUser.age,
+  };
 
   // Check for overlapping bookings where user is PARTICIPANT
   const userBookings = await Booking.find({
@@ -405,6 +428,60 @@ const updateTravelPlan = async (
 
   if (payload.image && travelPlan.image) {
     await deleteImageFromCloudinary(travelPlan.image);
+  }
+
+  // Date Validation for Updates
+  let newStart = travelPlan.startDate.getTime();
+  let newEnd = travelPlan.endDate.getTime();
+
+  if (payload.startDate) {
+    const minStartDate = new Date();
+    minStartDate.setDate(minStartDate.getDate() + 7);
+    minStartDate.setHours(0, 0, 0, 0);
+
+    const providedStartDate = new Date(payload.startDate);
+    if (providedStartDate < minStartDate) {
+      throw new AppError(
+        status.BAD_REQUEST,
+        "Start date must be at least 7 days from today"
+      );
+    }
+    newStart = providedStartDate.getTime();
+  }
+
+  if (payload.endDate) {
+    const providedEndDate = new Date(payload.endDate);
+    newEnd = providedEndDate.getTime();
+  }
+
+  // Ensure End Date >= Start Date
+  if (newEnd < newStart) {
+    throw new AppError(
+      status.BAD_REQUEST,
+      "End date must be after or equal to start date"
+    );
+  }
+
+  // Check for conflicts with existing hosted plans (excluding current plan)
+  if (payload.startDate || payload.endDate) {
+    const overlappingPlans = await TravelPlan.find({
+      host: userId,
+      _id: { $ne: id },
+      status: { $ne: ITrevelStatus.CANCELLED },
+      $or: [
+        {
+          startDate: { $lte: new Date(newEnd) },
+          endDate: { $gte: new Date(newStart) },
+        },
+      ],
+    });
+
+    if (overlappingPlans.length > 0) {
+      throw new AppError(
+        status.BAD_REQUEST,
+        `Rescheduling conflict: You have another travel plan '${overlappingPlans[0].title}' during this period.`
+      );
+    }
   }
 
   const updatedPlan = await TravelPlan.findByIdAndUpdate(
