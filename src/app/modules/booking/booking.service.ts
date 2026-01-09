@@ -146,6 +146,7 @@ const createBooking = async (userId: string, payload: Partial<IBooking>) => {
   // Check if user is hosting any travel plan during this time range
   const hostedPlans = await TravelPlan.find({
     host: userId,
+    _id: { $ne: travelId }, // Exclude the travel plan being booked
     status: { $ne: ITrevelStatus.CANCELLED },
   });
 
