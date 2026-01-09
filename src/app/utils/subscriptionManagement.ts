@@ -7,10 +7,7 @@ import { IPaymentStatus } from "../modules/payment/payment.interface";
 // Separate logic function for manual/endpoint execution
 export const checkSubscriptionExpiry = async () => {
   try {
-    console.log(
-      "🔄 Checking subscription expiry...",
-      new Date().toISOString()
-    );
+    console.log("🔄 Checking subscription expiry...", new Date().toISOString());
 
     const now = new Date();
 
@@ -50,7 +47,7 @@ export const checkSubscriptionExpiry = async () => {
     } else {
       console.log("✅ No expired subscriptions found.");
     }
-    
+
     return true;
   } catch (error) {
     console.error("❌ Error in subscription expiry check:", error);
@@ -77,7 +74,7 @@ export const checkSubscriptionReminders = async () => {
     console.log(
       `${expiringSoonUsers.length} subscription(s) expiring in next 24 hours.`
     );
-     return true;
+    return true;
   } catch (error) {
     console.error("❌ Error in subscription reminder check:", error);
     throw error;

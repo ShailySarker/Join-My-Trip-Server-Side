@@ -10,7 +10,10 @@ import { PaymentControllers } from "./app/modules/payment/payment.controller";
 import bodyParser from "body-parser";
 import { checkSubscriptionExpiry, startSubscriptionCronJob, checkSubscriptionReminders } from "./app/utils/subscriptionManagement";
 import { updateTravelPlanStatuses } from "./app/utils/updateTravelPlanStatuses";
-import cron from "node-cron";
+// =========================================================
+// CRON JOB ENDPOINTS (For Render Free Tier)
+// Use these URLs in Render's Cron Job dashboard
+// =========================================================
 
 const app = express();
 
@@ -32,7 +35,6 @@ app.use(
   })
 );
 
-
 // =========================================================
 // CRON JOB ENDPOINTS (For Render Free Tier)
 // Use these URLs in Render's Cron Job dashboard
@@ -46,13 +48,18 @@ app.get("/api/v1/cron/travel-status", async (req, res) => {
     
     // Also check for subscription reminders daily
     console.log("CRON: Checking subscription reminders...");
+    // We wrap this in a try-catch so it doesn't fail the entire request if it fails, 
+    // but typically we want to know if it fails. 
+    // Since this is a cron response, returning 500 is technically correct for failure, 
+    // but let's prevent massive error dumps.
     await checkSubscriptionReminders();
 
-    // Return minimal response to avoid "Response data too big" error
-    return res.status(200).send("OK");
-  } catch (e) {
+    // Return JSON response to avoid "Response data too big" error from HTML 504s
+    return res.status(200).json({ success: true, message: "Travel statuses updated and reminders checked" });
+  } catch (e: any) {
     console.error("CRON Error:", e);
-    return res.status(500).send("FAILED");
+    // Send only the error message to avoid circular dependency issues or large payloads
+    return res.status(500).json({ success: false, error: e.message || "Internal Server Error during Cron execution" });
   }
 });
 
@@ -61,11 +68,11 @@ app.get("/api/v1/cron/subscription-check", async (req, res) => {
   try {
     console.log("CRON: Checking subscription expiry...");
     await checkSubscriptionExpiry();
-    // Return minimal response to avoid "Response data too big" error
-    return res.status(200).send("OK");
-  } catch (e) {
+    // Return JSON response
+    return res.status(200).json({ success: true, message: "Subscription expiry checked" });
+  } catch (e: any) {
     console.error("CRON Error:", e);
-    return res.status(500).send("FAILED");
+    return res.status(500).json({ success: false, error: e.message || "Internal Server Error during Cron execution" });
   }
 });
 
