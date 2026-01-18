@@ -18,7 +18,7 @@ export const seedSuperAdmin = async () => {
     // console.log("Trying to create Super Admin...");
     const hashedPassword = await bcryptjs.hash(
       envVars.SUPER_ADMIN.SUPER_ADMIN_PASSWORD,
-      Number(envVars.BCRYPT.BCRYPT_SALT_ROUND)
+      Number(envVars.BCRYPT.BCRYPT_SALT_ROUND),
     );
 
     const payload: IUser = {
@@ -28,6 +28,12 @@ export const seedSuperAdmin = async () => {
       password: hashedPassword,
       isVerified: true,
       isDeleted: false,
+      auths: [
+        {
+          provider: "Credential",
+          providerId: envVars.SUPER_ADMIN.SUPER_ADMIN_EMAIL,
+        },
+      ],
     };
     // console.log("Payload: ", payload);
 

@@ -5,6 +5,11 @@ import {
 import { ITrevelInterest } from "../travelPlan/travelPlan.interface";
 import mongoose from "mongoose";
 
+export interface IAuthProvider {
+  provider: "Google" | "Credential";
+  providerId: string;
+}
+
 export enum IUserRole {
   SUPER_ADMIN = "SUPER_ADMIN",
   ADMIN = "ADMIN",
@@ -26,6 +31,7 @@ export interface IUserSubscriptionInfo {
 
 export interface IUser {
   _id?: string;
+  auths: IAuthProvider[];
   fullname: string;
   email: string;
   password: string;

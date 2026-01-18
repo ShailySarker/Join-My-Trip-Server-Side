@@ -30,6 +30,43 @@ const createBooking = async (userId: string, payload: Partial<IBooking>) => {
     throw new AppError(status.NOT_FOUND, "User not found");
   }
 
+  // console.log(user);
+  // Validate host has required information for participant
+  // if (!user.phone || !user.gender || !user.age) {
+  //   throw new AppError(
+  //     status.BAD_REQUEST,
+  //     "Please complete your profile setup (age, phone and gender required) before joining a travel plan"
+  //   );
+  // }
+
+  // if (!user.age) {
+  //   throw new AppError(
+  //     status.BAD_REQUEST,
+  //     "Please complete your profile (age required) before joining a travel plan"
+  //   );
+  // }
+
+  // if (user.age === null) {
+  //   new AppError(
+  //     status.BAD_REQUEST,
+  //     "Your need to update your profile age info to join a travel plan"
+  //   );
+  // }
+
+  // if (user.age < 18) {
+  //   throw new AppError(
+  //     status.BAD_REQUEST,
+  //     "You must be at least 18 years old to join a travel plan"
+  //   );
+  // }
+
+  // if (user.age < (payload.minAge as number)) {
+  //   throw new AppError(
+  //     status.BAD_REQUEST,
+  //     `${user.fullname} must be at least ${payload.minAge} years old to join this travel plan.`
+  //   );
+  // }
+
   const hasSubscription =
     user.subscriptionInfo?.plan &&
     (user.subscriptionInfo.plan === ISubscriptionPlan.MONTHLY ||

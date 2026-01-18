@@ -14,15 +14,30 @@ import {
   checkSubscriptionReminders,
 } from "./app/utils/subscriptionManagement";
 import { updateTravelPlanStatuses } from "./app/utils/updateTravelPlanStatuses";
+import passport from "passport";
+import expressSession from "express-session";
 
 const app = express();
 
+// stripe payment
 app.post(
   "/webhook",
   bodyParser.raw({ type: "application/json" }),
-  PaymentControllers.handleWebhook
+  PaymentControllers.handleWebhook,
 );
 
+// passport
+app.use(
+  expressSession({
+    secret: envVars.GOOGLE.GOOGLE_CLIENT_SECRET,
+    resave: false,
+    saveUninitialized: false,
+  }),
+);
+app.use(passport.initialize());
+app.use(passport.session());
+
+// middlewares
 app.use(cookieParser());
 app.use(express.json()); //for json data parse
 app.set("trust proxy", 1); //all external live links's proxy will trust
@@ -32,7 +47,7 @@ app.use(
   cors({
     origin: envVars.FRONTEND.FRONTEND_URL,
     credentials: true,
-  })
+  }),
 );
 
 // 1. Daily Travel Plan Status Update (Schedule: 0 0 * * *)
@@ -40,7 +55,7 @@ app.get("/api/v1/cron/travel-status", async (req, res) => {
   try {
     console.log(
       "CRON: Updating travel plan statuses...",
-      new Date().toISOString()
+      new Date().toISOString(),
     );
     await updateTravelPlanStatuses();
 
@@ -71,7 +86,7 @@ app.get("/api/v1/cron/subscription-check", async (req, res) => {
   try {
     console.log(
       "CRON: Checking subscription expiry...",
-      new Date().toISOString()
+      new Date().toISOString(),
     );
     await checkSubscriptionExpiry();
     // Return JSON response

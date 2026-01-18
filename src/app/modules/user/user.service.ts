@@ -33,13 +33,19 @@ const createUser = async (payload: Partial<IUser>) => {
 
   const hashedPassword = await bcryptjs.hash(
     password as string,
-    Number(envVars.BCRYPT.BCRYPT_SALT_ROUND)
+    Number(envVars.BCRYPT.BCRYPT_SALT_ROUND),
   );
 
   const user = await User.create({
     fullname,
     email,
     password: hashedPassword,
+    auths: [
+      {
+        provider: "Credential",
+        providerId: email,
+      },
+    ],
     ...rest,
   });
 
@@ -65,7 +71,7 @@ const getSingleUser = async (id: string, viewerId?: string) => {
       if (!hasSubscription) {
         throw new AppError(
           status.FORBIDDEN,
-          "You need an active subscription to view user profiles"
+          "You need an active subscription to view user profiles",
         );
       }
     }
@@ -75,7 +81,7 @@ const getSingleUser = async (id: string, viewerId?: string) => {
   const user = await User.findOneAndUpdate(
     { _id: id, isDeleted: false },
     { $inc: { totalProfileViews: 1 } },
-    { new: true }
+    { new: true },
   ).select("-password");
 
   if (!user) {
@@ -103,10 +109,9 @@ const deleteSingleUser = async (id: string) => {
   ) {
     throw new AppError(
       status.BAD_REQUEST,
-      "Cannot delete user with an active subscription."
+      "Cannot delete user with an active subscription.",
     );
   }
-
 
   // 2. Check if user is hosting any ONGOING travel plan
   const ongoingHostedPlans = await TravelPlan.findOne({
@@ -117,7 +122,7 @@ const deleteSingleUser = async (id: string) => {
   if (ongoingHostedPlans) {
     throw new AppError(
       status.BAD_REQUEST,
-      "Cannot delete user who is hosting an ongoing travel plan."
+      "Cannot delete user who is hosting an ongoing travel plan.",
     );
   }
 
@@ -134,7 +139,7 @@ const deleteSingleUser = async (id: string) => {
   if (ongoingParticipation) {
     throw new AppError(
       status.BAD_REQUEST,
-      "Cannot delete user who is participating in an ongoing travel plan."
+      "Cannot delete user who is participating in an ongoing travel plan.",
     );
   }
 
@@ -155,7 +160,7 @@ const deleteSingleUser = async (id: string) => {
     // Cancel all bookings for this plan
     await Booking.updateMany(
       { travelId: plan._id },
-      { bookingStatus: IBookingStatus.CANCELLED }
+      { bookingStatus: IBookingStatus.CANCELLED },
     );
   }
 
@@ -182,7 +187,7 @@ const deleteSingleUser = async (id: string) => {
   const deletedUser = await User.findOneAndUpdate(
     { _id: id, isDeleted: false },
     { isDeleted: true },
-    { new: true }
+    { new: true },
   );
 
   return { data: deletedUser };
@@ -195,7 +200,10 @@ const getMe = async (userId: string) => {
   };
 };
 
-const getMyFollowers = async (userId: string, query: Record<string, unknown>) => {
+const getMyFollowers = async (
+  userId: string,
+  query: Record<string, unknown>,
+) => {
   const user = await User.findById(userId).select("myFollowers");
 
   if (!user) {
@@ -208,7 +216,7 @@ const getMyFollowers = async (userId: string, query: Record<string, unknown>) =>
       _id: { $in: user.myFollowers },
       isDeleted: false,
     }).select("-password") as any,
-    query
+    query,
   )
     .search(searchableFields)
     .filter(filterableFields)
@@ -220,7 +228,10 @@ const getMyFollowers = async (userId: string, query: Record<string, unknown>) =>
   return result;
 };
 
-const getMyFollowings = async (userId: string, query: Record<string, unknown>) => {
+const getMyFollowings = async (
+  userId: string,
+  query: Record<string, unknown>,
+) => {
   const user = await User.findById(userId).select("myFollowings");
 
   if (!user) {
@@ -233,7 +244,7 @@ const getMyFollowings = async (userId: string, query: Record<string, unknown>) =
       _id: { $in: user.myFollowings },
       isDeleted: false,
     }).select("-password") as any,
-    query
+    query,
   )
     .search(searchableFields)
     .filter(filterableFields)
@@ -261,7 +272,7 @@ const toggleFollow = async (currentUserId: string, targetUserId: string) => {
   if (!targetUser) {
     throw new AppError(
       status.NOT_FOUND,
-      "Target user is unverified or deactivated"
+      "Target user is unverified or deactivated",
     );
   }
 
@@ -275,7 +286,7 @@ const toggleFollow = async (currentUserId: string, targetUserId: string) => {
   if (!currentUser) {
     throw new AppError(
       status.NOT_FOUND,
-      "Current user is unverified or deactivated"
+      "Current user is unverified or deactivated",
     );
   }
 
@@ -295,14 +306,14 @@ const toggleFollow = async (currentUserId: string, targetUserId: string) => {
   if (!currentUserHasSubscription) {
     throw new AppError(
       status.FORBIDDEN,
-      "You need an active subscription to follow users"
+      "You need an active subscription to follow users",
     );
   }
 
   if (!targetUserHasSubscription) {
     throw new AppError(
       status.FORBIDDEN,
-      "This user does not have an active subscription and cannot be followed"
+      "This user does not have an active subscription and cannot be followed",
     );
   }
 
@@ -353,7 +364,7 @@ const updateUserProfile = async (userId: string, payload: Partial<IUser>) => {
     {
       new: true,
       runValidators: true,
-    }
+    },
   ).select("-password");
 
   if (payload.profilePhoto && user.profilePhoto) {
@@ -372,9 +383,9 @@ const updateUserProfile = async (userId: string, payload: Partial<IUser>) => {
 const getAllUsers = async (query: Record<string, unknown>) => {
   const userQuery = new QueryBuilder(
     User.find({ isDeleted: false, role: IUserRole.USER }).select(
-      "-password"
+      "-password",
     ) as any,
-    query
+    query,
   );
 
   const result = await userQuery

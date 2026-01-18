@@ -25,13 +25,13 @@
     "@types/multer": "^2.0.0",
     "@types/nodemailer": "^7.0.4",
     "@types/passport": "^1.0.17",
+    "@types/passport-google-oauth20": "^2.0.17",
     "@types/passport-local": "^1.0.38",
     "eslint": "^9.39.1",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.48.0"
   },
   "dependencies": {
-    "ts-node-dev": "^2.0.0",
     "bcryptjs": "^3.0.3",
     "body-parser": "^2.2.1",
     "cloudinary": "^1.41.3",
@@ -50,9 +50,11 @@
     "node-cron": "^4.2.1",
     "nodemailer": "^7.0.11",
     "passport": "^0.7.0",
+    "passport-google-oauth20": "^2.0.0",
     "passport-local": "^1.0.0",
     "redis": "^5.10.0",
     "stripe": "^20.0.0",
+    "ts-node-dev": "^2.0.0",
     "zod": "^4.1.13"
   }
 }
