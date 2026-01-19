@@ -16,6 +16,7 @@ import {
 import { updateTravelPlanStatuses } from "./app/utils/updateTravelPlanStatuses";
 import passport from "passport";
 import expressSession from "express-session";
+import "./app/config/passport";
 
 const app = express();
 

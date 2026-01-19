@@ -201,6 +201,19 @@ const removeParticipant = catchAsync(
   }
 );
 
+const getPopularDestinations = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const result = await TravelPlanServices.getPopularDestinations();
+
+    sendResponse(res, {
+      success: true,
+      statusCode: status.OK,
+      message: "Popular destinations retrieved successfully",
+      data: result.data,
+    });
+  }
+);
+
 export const TravelPlanControllers = {
   createTravelPlan,
   getMyTravelPlan,
@@ -212,4 +225,5 @@ export const TravelPlanControllers = {
   updateTravelPlan,
   addParticipant,
   removeParticipant,
+  getPopularDestinations,
 };

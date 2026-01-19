@@ -34,7 +34,7 @@ export interface IUser {
   auths: IAuthProvider[];
   fullname: string;
   email: string;
-  password: string;
+  password?: string;
   role: IUserRole; // default user
   phone?: string;
   gender?: IUserGender;

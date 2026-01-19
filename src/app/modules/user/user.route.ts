@@ -50,6 +50,8 @@ router.get(
   UserControllers.getAdminDashboardStats
 );
 
+router.get("/public-stats", UserControllers.getPublicStats);
+
 router.post(
   "/follow/:id",
   checkAuth(...Object.values(IUserRole)),

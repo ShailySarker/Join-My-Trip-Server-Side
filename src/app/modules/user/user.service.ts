@@ -500,6 +500,59 @@ const getUserDashboardStats = async (userId: string) => {
   };
 };
 
+const getPublicStats = async () => {
+  const { TravelPlan } = await import("../travelPlan/travelPlan.model");
+  const { Booking } = await import("../booking/booking.model");
+  const { Review } = await import("../review/review.model");
+  const { ITrevelStatus } = await import("../travelPlan/travelPlan.interface");
+
+  const totalUsers = await User.countDocuments({
+    isDeleted: false,
+    role: IUserRole.USER,
+  });
+  const totalTravelPlans = await TravelPlan.countDocuments();
+  const totalBookings = await Booking.countDocuments();
+  const totalReviews = await Review.countDocuments();
+
+  // Status distribution for basic graph
+  const statusData = [
+    {
+      name: "Upcoming",
+      value: await TravelPlan.countDocuments({
+        status: ITrevelStatus.UPCOMING,
+      }),
+    },
+    {
+      name: "Ongoing",
+      value: await TravelPlan.countDocuments({ status: ITrevelStatus.ONGOING }),
+    },
+    {
+      name: "Completed",
+      value: await TravelPlan.countDocuments({
+        status: ITrevelStatus.COMPLETED,
+      }),
+    },
+  ];
+
+  // Calculate average rating across all reviews
+  const reviews = await Review.find().select("rating");
+  const averageRating =
+    reviews.length > 0
+      ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length
+      : 0;
+
+  return {
+    data: {
+      totalUsers,
+      totalTravelPlans,
+      totalBookings,
+      totalReviews,
+      averageRating,
+      statusData,
+    },
+  };
+};
+
 export const UserServices = {
   createUser,
   getSingleUser,
@@ -511,4 +564,5 @@ export const UserServices = {
   getMyFollowings,
   toggleFollow,
   getUserDashboardStats,
+  getPublicStats,
 };

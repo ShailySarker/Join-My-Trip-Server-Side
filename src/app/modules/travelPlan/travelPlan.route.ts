@@ -21,6 +21,9 @@ router.get(
   checkAuth(IUserRole.USER),
   TravelPlanControllers.getMyTravelPlan
 );
+
+router.get("/popular-destinations", TravelPlanControllers.getPopularDestinations);
+
 router.get("/", TravelPlanControllers.getAllTravelPlansPublic);
 
 router.get(

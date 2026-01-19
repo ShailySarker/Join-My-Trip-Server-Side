@@ -179,6 +179,19 @@ const getAdminDashboardStats = catchAsync(
   }
 );
 
+const getPublicStats = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const result = await UserServices.getPublicStats();
+
+    sendResponse(res, {
+      success: true,
+      statusCode: status.OK,
+      message: "Public stats retrieved successfully",
+      data: result.data,
+    });
+  }
+);
+
 export const UserControllers = {
   createUser,
   getSingleUser,
@@ -191,4 +204,5 @@ export const UserControllers = {
   toggleFollow,
   getUserDashboardStats,
   getAdminDashboardStats,
+  getPublicStats,
 };

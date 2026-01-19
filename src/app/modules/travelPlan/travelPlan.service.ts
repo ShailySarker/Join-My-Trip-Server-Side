@@ -620,6 +620,34 @@ const removeParticipantFromTravelPlan = async (
   return { data: updatedPlan };
 };
 
+const getPopularDestinations = async () => {
+  const result = await TravelPlan.aggregate([
+    {
+      $group: {
+        _id: { city: "$destination.city", country: "$destination.country" },
+        count: { $sum: 1 },
+        image: { $first: "$image" },
+      },
+    },
+    {
+      $sort: { count: -1 },
+    },
+    {
+      $limit: 6,
+    },
+    {
+      $project: {
+        _id: 0,
+        city: "$_id.city",
+        country: "$_id.country",
+        count: "$count",
+        image: "$image",
+      },
+    },
+  ]);
+  return { data: result };
+};
+
 export const TravelPlanServices = {
   createTravelPlan,
   getMyTravelPlan,
@@ -631,4 +659,5 @@ export const TravelPlanServices = {
   updateTravelPlan,
   addParticipantToTravelPlan,
   removeParticipantFromTravelPlan,
+  getPopularDestinations,
 };

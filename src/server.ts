@@ -7,6 +7,7 @@ import { updateTravelPlanStatuses } from "./app/utils/updateTravelPlanStatuses";
 import cron from "node-cron";
 import { startSubscriptionCronJob } from "./app/utils/subscriptionManagement";
 import { connectRedis } from "./app/config/redis.config";
+import { seedDemoUsers } from "./app/utils/seedDemoUsers";
 
 let server: Server;
 
@@ -27,6 +28,7 @@ const startServer = async () => {
   await connectRedis();
   await startServer();
   await seedSuperAdmin();
+  await seedDemoUsers();
   await updateTravelPlanStatuses(); // Run once on startup
 
   // NOTE: Internal cron jobs are commented out for Render Free Tier.

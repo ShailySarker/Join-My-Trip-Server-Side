@@ -212,9 +212,9 @@ const getUserReviews = async (
 const getAllReviews = async (query: Record<string, unknown>) => {
   const reviewQuery = new QueryBuilder(
     Review.find()
-      .populate("reviewerId", "fullname email")
+      .populate("reviewerId", "fullname email profilePhoto currentLocation")
       .populate("revieweeId", "fullname email")
-      .populate("travelId", "title"),
+      .populate("travelId", "title destination image startDate endDate"),
     query
   )
     .search(["comment"])
