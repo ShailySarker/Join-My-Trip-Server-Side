@@ -67,6 +67,10 @@ const cloudinary_config_1 = require("../../config/cloudinary.config");
 const QueryBuilder_1 = __importDefault(require("../../utils/QueryBuilder"));
 const user_constant_1 = require("./user.constant");
 const subscription_interface_1 = require("../subscription/subscription.interface");
+const travelPlan_model_1 = require("../travelPlan/travelPlan.model");
+const travelPlan_interface_1 = require("../travelPlan/travelPlan.interface");
+const booking_model_1 = require("../booking/booking.model");
+const booking_interface_1 = require("../booking/booking.interface");
 const createUser = (payload) => __awaiter(void 0, void 0, void 0, function* () {
     const { fullname, email, password } = payload, rest = __rest(payload, ["fullname", "email", "password"]);
     if (!email || !fullname || !password) {
@@ -78,7 +82,12 @@ const createUser = (payload) => __awaiter(void 0, void 0, void 0, function* () {
     }
     const hashedPassword = yield bcryptjs_1.default.hash(password, Number(env_1.envVars.BCRYPT.BCRYPT_SALT_ROUND));
     const user = yield user_model_1.User.create(Object.assign({ fullname,
-        email, password: hashedPassword }, rest));
+        email, password: hashedPassword, auths: [
+            {
+                provider: user_interface_1.IProvider.CREDENTIAL,
+                providerId: email,
+            },
+        ] }, rest));
     return user;
 });
 const getSingleUser = (id, viewerId) => __awaiter(void 0, void 0, void 0, function* () {
@@ -110,14 +119,70 @@ const getSingleUser = (id, viewerId) => __awaiter(void 0, void 0, void 0, functi
     };
 });
 const deleteSingleUser = (id) => __awaiter(void 0, void 0, void 0, function* () {
-    const user = yield user_model_1.User.findOneAndUpdate({ _id: id, isDeleted: false }, // find only active user
-    { isDeleted: true }, // mark as deleted
-    { new: true } // return updated user
-    );
+    var _a;
+    const user = yield user_model_1.User.findById(id);
     if (!user) {
         throw new AppError_1.default(http_status_1.default.NOT_FOUND, "User not found");
     }
-    return { data: user };
+    // 1. Check if user has active subscription
+    if (((_a = user.subscriptionInfo) === null || _a === void 0 ? void 0 : _a.plan) &&
+        user.subscriptionInfo.status === "ACTIVE" &&
+        user.subscriptionInfo.expireDate &&
+        new Date(user.subscriptionInfo.expireDate) > new Date()) {
+        throw new AppError_1.default(http_status_1.default.BAD_REQUEST, "Cannot delete user with an active subscription.");
+    }
+    // 2. Check if user is hosting any ONGOING travel plan
+    const ongoingHostedPlans = yield travelPlan_model_1.TravelPlan.findOne({
+        host: id,
+        status: travelPlan_interface_1.ITrevelStatus.ONGOING,
+    });
+    if (ongoingHostedPlans) {
+        throw new AppError_1.default(http_status_1.default.BAD_REQUEST, "Cannot delete user who is hosting an ongoing travel plan.");
+    }
+    // 3. Check if user is a participant in any ONGOING travel plan (via Bookings or direct participant check)
+    // Usually, being a participant implies having a booking.
+    // We check bookings that are BOOKED for plans that are ONGOING.
+    // Or check TravelPlans where participants.userId == id AND status == ONGOING.
+    const ongoingParticipation = yield travelPlan_model_1.TravelPlan.findOne({
+        "participants.userId": id,
+        status: travelPlan_interface_1.ITrevelStatus.ONGOING,
+    });
+    if (ongoingParticipation) {
+        throw new AppError_1.default(http_status_1.default.BAD_REQUEST, "Cannot delete user who is participating in an ongoing travel plan.");
+    }
+    // --- Deletion Process ---
+    // 4. Cancel all UPCOMING travel plans created by this user
+    const hostedPlans = yield travelPlan_model_1.TravelPlan.find({
+        host: id,
+        status: travelPlan_interface_1.ITrevelStatus.UPCOMING,
+    });
+    for (const plan of hostedPlans) {
+        // Mark plan as CANCELLED
+        yield travelPlan_model_1.TravelPlan.findByIdAndUpdate(plan._id, {
+            status: travelPlan_interface_1.ITrevelStatus.CANCELLED,
+        });
+        // Cancel all bookings for this plan
+        yield booking_model_1.Booking.updateMany({ travelId: plan._id }, { bookingStatus: booking_interface_1.IBookingStatus.CANCELLED });
+    }
+    // 5. Cancel all bookings made BY this user for other plans
+    // And remove them from the participants list of those plans
+    const userBookings = yield booking_model_1.Booking.find({
+        userId: id,
+        bookingStatus: booking_interface_1.IBookingStatus.BOOKED,
+    });
+    for (const booking of userBookings) {
+        // Cancel the booking
+        yield booking_model_1.Booking.findByIdAndUpdate(booking._id, {
+            bookingStatus: booking_interface_1.IBookingStatus.CANCELLED,
+        });
+        // Remove from TravelPlan participants
+        yield travelPlan_model_1.TravelPlan.findByIdAndUpdate(booking.travelId, {
+            $pull: { participants: { userId: id } },
+        });
+    }
+    // 6. Finally, soft delete the user
+    const deletedUser = yield user_model_1.User.findOneAndUpdate({ _id: id, isDeleted: false }, { isDeleted: true }, { new: true });
+    return { data: deletedUser };
 });
 const getMe = (userId) => __awaiter(void 0, void 0, void 0, function* () {
     const user = yield user_model_1.User.findById(userId).select("-password");
@@ -357,6 +422,53 @@ const getUserDashboardStats = (userId) => __awaiter(void 0, void 0, void 0, func
         },
     };
 });
+const getPublicStats = () => __awaiter(void 0, void 0, void 0, function* () {
+    const { TravelPlan } = yield Promise.resolve().then(() => __importStar(require("../travelPlan/travelPlan.model")));
+    const { Booking } = yield Promise.resolve().then(() => __importStar(require("../booking/booking.model")));
+    const { Review } = yield Promise.resolve().then(() => __importStar(require("../review/review.model")));
+    const { ITrevelStatus } = yield Promise.resolve().then(() => __importStar(require("../travelPlan/travelPlan.interface")));
+    const totalUsers = yield user_model_1.User.countDocuments({
+        isDeleted: false,
+        role: user_interface_1.IUserRole.USER,
+    });
+    const totalTravelPlans = yield TravelPlan.countDocuments();
+    const totalBookings = yield Booking.countDocuments();
+    const totalReviews = yield Review.countDocuments();
+    // Status distribution for basic graph
+    const statusData = [
+        {
+            name: "Upcoming",
+            value: yield TravelPlan.countDocuments({
+                status: ITrevelStatus.UPCOMING,
+            }),
+        },
+        {
+            name: "Ongoing",
+            value: yield TravelPlan.countDocuments({ status: ITrevelStatus.ONGOING }),
+        },
+        {
+            name: "Completed",
+            value: yield TravelPlan.countDocuments({
+                status: ITrevelStatus.COMPLETED,
+            }),
+        },
+    ];
+    // Calculate average rating across all reviews
+    const reviews = yield Review.find().select("rating");
+    const averageRating = reviews.length > 0
+        ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length
+        : 0;
+    return {
+        data: {
+            totalUsers,
+            totalTravelPlans,
+            totalBookings,
+            totalReviews,
+            averageRating,
+            statusData,
+        },
+    };
+});
 exports.UserServices = {
     createUser,
     getSingleUser,
@@ -368,4 +480,5 @@ exports.UserServices = {
     getMyFollowings,
     toggleFollow,
     getUserDashboardStats,
+    getPublicStats,
 };

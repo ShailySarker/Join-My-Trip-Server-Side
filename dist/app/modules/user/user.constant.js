@@ -24,4 +24,5 @@ exports.sortableFields = [
     "reviewCount",
     "createdAt",
     "updatedAt",
+    "totalProfileViews",
 ];

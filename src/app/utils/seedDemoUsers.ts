@@ -2,7 +2,7 @@
 import bcryptjs from "bcryptjs";
 import { User } from "../modules/user/user.model";
 import { envVars } from "../config/env";
-import { IUserRole } from "../modules/user/user.interface";
+import { IProvider, IUserRole } from "../modules/user/user.interface";
 
 export const seedDemoUsers = async () => {
   try {
@@ -25,7 +25,7 @@ export const seedDemoUsers = async () => {
             role: IUserRole.ADMIN,
             isVerified: true,
             isDeleted: false,
-            auths: [{ provider: "Credential", providerId: demoAdminEmail }]
+            auths: [{ provider: IProvider.CREDENTIAL, providerId: demoAdminEmail }]
         });
         console.log("Demo Admin created!");
     }
@@ -40,7 +40,7 @@ export const seedDemoUsers = async () => {
             role: IUserRole.USER,
             isVerified: true,
             isDeleted: false,
-            auths: [{ provider: "Credential", providerId: demoUserEmail }]
+            auths: [{ provider: IProvider.CREDENTIAL, providerId: demoUserEmail }]
         });
         console.log("Demo User created!");
     }

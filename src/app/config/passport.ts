@@ -6,7 +6,7 @@ import {
   VerifyCallback,
 } from "passport-google-oauth20";
 import { envVars } from "./env";
-import { IUserRole } from "../modules/user/user.interface";
+import { IProvider, IUserRole } from "../modules/user/user.interface";
 
 // passport-google-oauth20
 passport.use(
@@ -50,7 +50,7 @@ passport.use(
             isVerified: true,
             auths: [
               {
-                provider: "Google",
+                provider: IProvider.GOOGLE,
                 providerId: profile.id,
               },
             ],

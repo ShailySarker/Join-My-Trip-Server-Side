@@ -79,8 +79,8 @@ exports.createTravelPlanSchema = zod_1.z
     .refine((data) => {
     const start = new Date(data.startDate);
     const minDate = new Date();
-    minDate.setDate(minDate.getDate() + 0);
-    minDate.setHours(0, 0, 0, 0);
+    minDate.setDate(minDate.getDate() + 7); // Start date must be at least 7 days from today
+    minDate.setHours(0, 0, 0, 0); // Normalize time
     return start >= minDate;
 }, {
     message: "Start date must be at least 7 days from today",
@@ -144,30 +144,6 @@ exports.updateTravelPlanSchema = zod_1.z
         .min(5, "Minimum age cannot be less than 5")
         .max(50, "Minimum age cannot exceed 50")
         .optional(),
-})
-    .refine((data) => {
-    // If startDate is being updated, it must be at least 7 days from today
-    if (data.startDate) {
-        const start = new Date(data.startDate);
-        const minDate = new Date();
-        minDate.setDate(minDate.getDate() + 7);
-        minDate.setHours(0, 0, 0, 0);
-        return start >= minDate;
-    }
-    return true;
-}, {
-    message: "Start date must be at least 7 days from today",
-    path: ["startDate"],
-})
-    .refine((data) => {
-    // If both dates are provided, endDate must be after or equal to startDate
-    if (data.startDate && data.endDate) {
-        return data.endDate >= data.startDate;
-    }
-    return true;
-}, {
-    message: "End date must be after or equal to start date",
-    path: ["endDate"],
 });
 // Add participant to travel plan validation
 exports.addParticipantSchema = exports.participantDetailsSchema;

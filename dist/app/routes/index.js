@@ -10,6 +10,7 @@ const subscription_route_1 = require("../modules/subscription/subscription.route
 const payment_route_1 = require("../modules/payment/payment.route");
 const booking_route_1 = require("../modules/booking/booking.route");
 const review_route_1 = require("../modules/review/review.route");
+const contact_route_1 = require("../modules/contact/contact.route");
 exports.router = (0, express_1.Router)();
 const moduleRoutes = [
     {
@@ -43,6 +44,10 @@ const moduleRoutes = [
     {
         path: "/reviews",
         route: review_route_1.ReviewRoutes,
+    },
+    {
+        path: "/contact",
+        route: contact_route_1.ContactRoutes,
     },
 ];
 moduleRoutes.forEach((route) => {

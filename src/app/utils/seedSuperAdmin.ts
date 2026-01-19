@@ -2,7 +2,7 @@
 import bcryptjs from "bcryptjs";
 import { User } from "../modules/user/user.model";
 import { envVars } from "../config/env";
-import { IUser, IUserRole } from "../modules/user/user.interface";
+import { IProvider, IUser, IUserRole } from "../modules/user/user.interface";
 
 export const seedSuperAdmin = async () => {
   try {
@@ -30,7 +30,7 @@ export const seedSuperAdmin = async () => {
       isDeleted: false,
       auths: [
         {
-          provider: "Credential",
+          provider: IProvider.CREDENTIAL,
           providerId: envVars.SUPER_ADMIN.SUPER_ADMIN_EMAIL,
         },
       ],

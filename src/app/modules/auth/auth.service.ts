@@ -1,6 +1,6 @@
 import status from "http-status";
 import AppError from "../../errorHelpers/AppError";
-import { IAuthProvider, IUser } from "../user/user.interface";
+import { IAuthProvider, IProvider, IUser } from "../user/user.interface";
 import { User } from "../user/user.model";
 import {
   createNewAccessTokenWithRefreshToken,
@@ -116,7 +116,9 @@ const setPassword = async (userId: string, plainPassword: string) => {
 
   if (
     user.password &&
-    user.auths.some((providerObject) => providerObject.provider === "Google")
+    user.auths.some(
+      (providerObject) => providerObject.provider === IProvider.GOOGLE,
+    )
   ) {
     throw new AppError(
       status.BAD_REQUEST,
@@ -130,7 +132,7 @@ const setPassword = async (userId: string, plainPassword: string) => {
   );
 
   const credentialProvider: IAuthProvider = {
-    provider: "Credential",
+    provider: IProvider.CREDENTIAL,
     providerId: user.email,
   };
 
@@ -163,7 +165,7 @@ const forgotPassword = async (email: string) => {
   };
 
   const resetToken = jwt.sign(jwtPayload, envVars.JWT.JWT_ACCESS_SECRET, {
-    expiresIn: "10m",
+    expiresIn: "30m",
   });
 
   const resetUILink = `${envVars.FRONTEND.FRONTEND_URL}/reset-password?id=${isUserExist._id}&token=${resetToken}`;

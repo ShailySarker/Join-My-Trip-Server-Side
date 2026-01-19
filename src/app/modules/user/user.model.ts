@@ -1,5 +1,5 @@
 import mongoose, { Schema, Document } from "mongoose";
-import { IUser, IUserGender, IUserRole } from "./user.interface";
+import { IProvider, IUser, IUserGender, IUserRole } from "./user.interface";
 import {
   ISubscriptionPlan,
   ISubscriptionPlanStatus,
@@ -15,7 +15,17 @@ const userSchema = new Schema<IUser>(
       trim: true,
       lowercase: true,
     },
-    password: { type: String, required: true },
+    password: { type: String, required: false },
+    auths: [
+      {
+        provider: {
+          type: String,
+          enum: Object.values(IProvider),
+          required: true,
+        },
+        providerId: { type: String, required: true },
+      },
+    ],
     role: {
       type: String,
       enum: Object.values(IUserRole),

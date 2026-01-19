@@ -1,6 +1,6 @@
 import status from "http-status";
 import { envVars } from "../../config/env";
-import { IUser, IUserRole } from "./user.interface";
+import { IProvider, IUser, IUserRole } from "./user.interface";
 import { User } from "./user.model";
 import AppError from "../../errorHelpers/AppError";
 import bcryptjs from "bcryptjs";
@@ -42,7 +42,7 @@ const createUser = async (payload: Partial<IUser>) => {
     password: hashedPassword,
     auths: [
       {
-        provider: "Credential",
+        provider: IProvider.CREDENTIAL,
         providerId: email,
       },
     ],

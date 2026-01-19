@@ -16,6 +16,7 @@ router.get("/my-followers", (0, checkAuth_1.checkAuth)(...Object.values(user_int
 router.get("/my-followings", (0, checkAuth_1.checkAuth)(...Object.values(user_interface_1.IUserRole)), user_controller_1.UserControllers.getMyFollowings);
 router.get("/dashboard-stats", (0, checkAuth_1.checkAuth)(user_interface_1.IUserRole.USER), user_controller_1.UserControllers.getUserDashboardStats);
 router.get("/admin-dashboard-stats", (0, checkAuth_1.checkAuth)(user_interface_1.IUserRole.ADMIN, user_interface_1.IUserRole.SUPER_ADMIN), user_controller_1.UserControllers.getAdminDashboardStats);
+router.get("/public-stats", user_controller_1.UserControllers.getPublicStats);
 router.post("/follow/:id", (0, checkAuth_1.checkAuth)(...Object.values(user_interface_1.IUserRole)), user_controller_1.UserControllers.toggleFollow);
 router.get("/", 
 // checkAuth(...Object.values(IUserRole)),

@@ -171,6 +171,15 @@ const getAdminDashboardStats = (0, catchAsync_1.catchAsync)((req, res, next) => 
         data: result.data,
     });
 }));
+const getPublicStats = (0, catchAsync_1.catchAsync)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    const result = yield user_service_1.UserServices.getPublicStats();
+    (0, sendResponse_1.sendResponse)(res, {
+        success: true,
+        statusCode: http_status_1.default.OK,
+        message: "Public stats retrieved successfully",
+        data: result.data,
+    });
+}));
 exports.UserControllers = {
     createUser,
     getSingleUser,
@@ -183,4 +192,5 @@ exports.UserControllers = {
     toggleFollow,
     getUserDashboardStats,
     getAdminDashboardStats,
+    getPublicStats,
 };

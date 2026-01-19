@@ -5,8 +5,13 @@ import {
 import { ITrevelInterest } from "../travelPlan/travelPlan.interface";
 import mongoose from "mongoose";
 
+export enum IProvider {
+  GOOGLE = "GOOGLE",
+  CREDENTIAL = "CREDENTIAL",
+}
+
 export interface IAuthProvider {
-  provider: "Google" | "Credential";
+  provider: IProvider;
   providerId: string;
 }
 

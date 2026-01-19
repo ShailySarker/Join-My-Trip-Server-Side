@@ -46,7 +46,17 @@ const userSchema = new mongoose_1.Schema({
         trim: true,
         lowercase: true,
     },
-    password: { type: String, required: true },
+    password: { type: String, required: false },
+    auths: [
+        {
+            provider: {
+                type: String,
+                enum: Object.values(user_interface_1.IProvider),
+                required: true,
+            },
+            providerId: { type: String, required: true },
+        },
+    ],
     role: {
         type: String,
         enum: Object.values(user_interface_1.IUserRole),

@@ -51,6 +51,36 @@ const createTravelPlan = (hostId, payload) => __awaiter(void 0, void 0, void 0, 
     if (hostUser.age < payload.minAge) {
         throw new AppError_1.default(http_status_1.default.BAD_REQUEST, `${hostUser.fullname} must be at least ${payload.minAge} years old to book this travel plan.`);
     }
+    // Check for overlapping non-cancelled travel plans where user is HOST
+    // Validate dates: Start date must be at least 7 days from today
+    const minStartDate = new Date();
+    minStartDate.setDate(minStartDate.getDate() + 7);
+    minStartDate.setHours(0, 0, 0, 0);
+    const providedStartDate = new Date(payload.startDate);
+    if (providedStartDate < minStartDate) {
+        throw new AppError_1.default(http_status_1.default.BAD_REQUEST, "Start date must be at least 7 days from today");
+    }
+    // Validate dates: End date must be after Start date
+    const providedEndDate = new Date(payload.endDate);
+    if (providedEndDate < providedStartDate) {
+        throw new AppError_1.default(http_status_1.default.BAD_REQUEST, "End date must be after start date");
+    }
+    // Check for overlapping non-cancelled travel plans where user is HOST
+    // Logic mirrored from booking service as requested
+    const newStart = providedStartDate.getTime();
+    const newEnd = providedEndDate.getTime();
+    const overlappingHostedPlans = yield travelPlan_model_1.TravelPlan.find({
+        host: hostId,
+        status: { $ne: travelPlan_interface_1.ITrevelStatus.CANCELLED },
+    });
+    for (const plan of overlappingHostedPlans) {
+        const existingStart = new Date(plan.startDate).getTime();
+        const existingEnd = new Date(plan.endDate).getTime();
+        // Check for overlap: (StartA <= EndB) and (EndA >= StartB)
+        if (newStart <= existingEnd && newEnd >= existingStart) {
+            throw new AppError_1.default(http_status_1.default.BAD_REQUEST, `You are already hosting a travel plan during this time range: ${plan.title}`);
+        }
+    }
     const hostParticipant = {
         userId: hostUser._id, // Cast to ObjectId
         name: hostUser.fullname,
@@ -58,6 +88,22 @@ const createTravelPlan = (hostId, payload) => __awaiter(void 0, void 0, void 0, 
         gender: hostUser.gender,
         age: hostUser.age,
     };
+    // Check for overlapping bookings where user is PARTICIPANT
+    const userBookings = yield booking_model_1.Booking.find({
+        userId: hostId,
+        bookingStatus: { $ne: "CANCELLED" },
+    }).populate("travelId");
+    for (const booking of userBookings) {
+        const existingPlan = booking.travelId;
+        if (existingPlan && existingPlan.startDate && existingPlan.endDate) {
+            const existingStart = new Date(existingPlan.startDate).getTime();
+            const existingEnd = new Date(existingPlan.endDate).getTime();
+            // Check for overlap
+            if (newStart <= existingEnd && newEnd >= existingStart) {
+                throw new AppError_1.default(http_status_1.default.BAD_REQUEST, `You already have a travel plan booked for this time range: ${existingPlan.title}`);
+            }
+        }
+    }
     const travelPlan = yield travelPlan_model_1.TravelPlan.create(Object.assign(Object.assign({}, payload), { host: hostId, slug, participants: [hostParticipant] }));
     return yield travelPlan.populate("host", "fullname email profilePhoto");
 });
@@ -128,7 +174,6 @@ const getAllTravelPlansPublic = (query) => __awaiter(void 0, void 0, void 0, fun
         .paginate()
         .fields()
         .execute();
-    console.log(result, "----------result--------------");
     return result;
 });
 const getAllTravelPlansAdmin = (query) => __awaiter(void 0, void 0, void 0, function* () {
@@ -229,6 +274,46 @@ const updateTravelPlan = (id, userId, payload) => __awaiter(void 0, void 0, void
     if (payload.image && travelPlan.image) {
         yield (0, cloudinary_config_1.deleteImageFromCloudinary)(travelPlan.image);
     }
+    // Date Validation for Updates
+    let newStart = travelPlan.startDate.getTime();
+    let newEnd = travelPlan.endDate.getTime();
+    if (payload.startDate) {
+        newStart = new Date(payload.startDate).getTime();
+    }
+    if (payload.endDate) {
+        newEnd = new Date(payload.endDate).getTime();
+    }
+    // Validate start date is at least 7 days from today (only if being updated)
+    if (payload.startDate) {
+        const minStartDate = new Date();
+        minStartDate.setDate(minStartDate.getDate() + 7);
+        minStartDate.setHours(0, 0, 0, 0);
+        const providedStartDate = new Date(payload.startDate);
+        providedStartDate.setHours(0, 0, 0, 0);
+        if (providedStartDate < minStartDate) {
+            throw new AppError_1.default(http_status_1.default.BAD_REQUEST, "Start date must be at least 7 days from today");
+        }
+    }
+    // Ensure End Date >= Start Date
+    if (newEnd < newStart) {
+        throw new AppError_1.default(http_status_1.default.BAD_REQUEST, "End date must be after or equal to start date");
+    }
+    // Check for conflicts with existing hosted plans (excluding current plan)
+    if (payload.startDate || payload.endDate) {
+        const activeHostedPlans = yield travelPlan_model_1.TravelPlan.find({
+            host: userId,
+            _id: { $ne: id },
+            status: { $ne: travelPlan_interface_1.ITrevelStatus.CANCELLED },
+        });
+        for (const plan of activeHostedPlans) {
+            const existingStart = new Date(plan.startDate).getTime();
+            const existingEnd = new Date(plan.endDate).getTime();
+            // Overlap condition: (StartA <= EndB) and (EndA >= StartB)
+            if (newStart <= existingEnd && newEnd >= existingStart) {
+                throw new AppError_1.default(http_status_1.default.BAD_REQUEST, `Rescheduling conflict: You have another travel plan '${plan.title}' during this period.`);
+            }
+        }
+    }
     const updatedPlan = yield travelPlan_model_1.TravelPlan.findByIdAndUpdate(id, { $set: payload }, { new: true, runValidators: true }).populate("host", "fullname email profilePhoto");
     return { data: updatedPlan };
 });
@@ -291,6 +376,33 @@ const removeParticipantFromTravelPlan = (travelPlanId, participantPhone, userId)
     const updatedPlan = yield travelPlan_model_1.TravelPlan.findByIdAndUpdate(travelPlanId, { $pull: { participants: { phone: participantPhone } } }, { new: true }).populate("host", "fullname email profilePhoto");
     return { data: updatedPlan };
 });
+const getPopularDestinations = () => __awaiter(void 0, void 0, void 0, function* () {
+    const result = yield travelPlan_model_1.TravelPlan.aggregate([
+        {
+            $group: {
+                _id: { city: "$destination.city", country: "$destination.country" },
+                count: { $sum: 1 },
+                image: { $first: "$image" },
+            },
+        },
+        {
+            $sort: { count: -1 },
+        },
+        {
+            $limit: 6,
+        },
+        {
+            $project: {
+                _id: 0,
+                city: "$_id.city",
+                country: "$_id.country",
+                count: "$count",
+                image: "$image",
+            },
+        },
+    ]);
+    return { data: result };
+});
 exports.TravelPlanServices = {
     createTravelPlan,
     getMyTravelPlan,
@@ -302,4 +414,5 @@ exports.TravelPlanServices = {
     updateTravelPlan,
     addParticipantToTravelPlan,
     removeParticipantFromTravelPlan,
+    getPopularDestinations,
 };

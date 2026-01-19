@@ -146,6 +146,15 @@ const removeParticipant = (0, catchAsync_1.catchAsync)((req, res, next) => __awa
         data: result.data,
     });
 }));
+const getPopularDestinations = (0, catchAsync_1.catchAsync)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    const result = yield travelPlan_service_1.TravelPlanServices.getPopularDestinations();
+    (0, sendResponse_1.sendResponse)(res, {
+        success: true,
+        statusCode: http_status_1.default.OK,
+        message: "Popular destinations retrieved successfully",
+        data: result.data,
+    });
+}));
 exports.TravelPlanControllers = {
     createTravelPlan,
     getMyTravelPlan,
@@ -157,4 +166,5 @@ exports.TravelPlanControllers = {
     updateTravelPlan,
     addParticipant,
     removeParticipant,
+    getPopularDestinations,
 };

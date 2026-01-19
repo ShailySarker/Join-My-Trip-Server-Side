@@ -36,6 +36,12 @@ const seedSuperAdmin = () => __awaiter(void 0, void 0, void 0, function* () {
             password: hashedPassword,
             isVerified: true,
             isDeleted: false,
+            auths: [
+                {
+                    provider: user_interface_1.IProvider.CREDENTIAL,
+                    providerId: env_1.envVars.SUPER_ADMIN.SUPER_ADMIN_EMAIL,
+                },
+            ],
         };
         // console.log("Payload: ", payload);
         const superAdmin = yield user_model_1.User.create(payload);

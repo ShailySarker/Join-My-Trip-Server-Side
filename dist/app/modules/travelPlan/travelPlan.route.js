@@ -11,6 +11,7 @@ const multer_config_1 = require("../../config/multer.config");
 const router = (0, express_1.Router)();
 router.post("/", (0, checkAuth_1.checkAuth)(user_interface_1.IUserRole.USER), multer_config_1.multerUpload.single("image"), (0, validateRequest_1.validatedRequest)(travelPlan_validation_1.TravelPlanSchemaValidation.createTravelPlanSchema), travelPlan_controller_1.TravelPlanControllers.createTravelPlan);
 router.get("/my-travel-plans", (0, checkAuth_1.checkAuth)(user_interface_1.IUserRole.USER), travelPlan_controller_1.TravelPlanControllers.getMyTravelPlan);
+router.get("/popular-destinations", travelPlan_controller_1.TravelPlanControllers.getPopularDestinations);
 router.get("/", travelPlan_controller_1.TravelPlanControllers.getAllTravelPlansPublic);
 router.get("/all-travel-plans", (0, checkAuth_1.checkAuth)(user_interface_1.IUserRole.ADMIN, user_interface_1.IUserRole.SUPER_ADMIN), travelPlan_controller_1.TravelPlanControllers.getAllTravelPlansAdmin);
 router.get("/:id", travelPlan_controller_1.TravelPlanControllers.getTravelPlanById);

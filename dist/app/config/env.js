@@ -33,6 +33,9 @@ const loadEnvVariables = () => {
         "CLOUDINARY_API_SECRET",
         "STRIPE_SECRET_KEY",
         "STRIPE_WEBHOOK_SECRET",
+        "GOOGLE_CLIENT_SECRET",
+        "GOOGLE_CLIENT_ID",
+        "GOOGLE_CALLBACK_URL",
     ];
     requiredEnvVariables.forEach((key) => {
         if (!process.env[key]) {
@@ -80,6 +83,11 @@ const loadEnvVariables = () => {
         STRIPE: {
             STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
             STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
+        },
+        GOOGLE: {
+            GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
+            GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
+            GOOGLE_CALLBACK_URL: process.env.GOOGLE_CALLBACK_URL,
         },
     };
 };
