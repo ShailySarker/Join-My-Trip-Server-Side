@@ -46,7 +46,11 @@ app.use(express.urlencoded({ extended: true })); //for form data
 
 app.use(
   cors({
-    origin: envVars.FRONTEND.FRONTEND_URL,
+    // origin: envVars.FRONTEND.FRONTEND_URL,
+    origin: [
+      envVars.FRONTEND.FRONTEND_URL_LOCAL,
+      envVars.FRONTEND.FRONTEND_URL,
+    ],
     credentials: true,
   }),
 );

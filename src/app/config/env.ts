@@ -21,6 +21,7 @@ interface EnvConfig {
   };
   FRONTEND: {
     FRONTEND_URL: string;
+    FRONTEND_URL_LOCAL: string;
   };
   REDIS: {
     REDIS_HOST: string;
@@ -64,6 +65,7 @@ const loadEnvVariables = (): EnvConfig => {
     "SUPER_ADMIN_EMAIL",
     "SUPER_ADMIN_PASSWORD",
     "FRONTEND_URL",
+    "FRONTEND_URL_LOCAL",
     "REDIS_HOST",
     "REDIS_PORT",
     "REDIS_USERNAME",
@@ -108,6 +110,7 @@ const loadEnvVariables = (): EnvConfig => {
     },
     FRONTEND: {
       FRONTEND_URL: process.env.FRONTEND_URL as string,
+      FRONTEND_URL_LOCAL: process.env.FRONTEND_URL_LOCAL as string,
     },
     REDIS: {
       REDIS_HOST: process.env.REDIS_HOST as string,
