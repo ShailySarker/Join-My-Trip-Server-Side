@@ -22,7 +22,7 @@ import { IBookingStatus } from "../booking/booking.interface";
 
 const createTravelPlan = async (
   hostId: string,
-  payload: Partial<ITravelPlan>
+  payload: Partial<ITravelPlan>,
 ) => {
   const slug: string = generateSlug(payload.title!);
 
@@ -30,7 +30,7 @@ const createTravelPlan = async (
   if (existingPlan) {
     throw new AppError(
       status.CONFLICT,
-      "A travel plan with this title already exists"
+      "A travel plan with this title already exists",
     );
   }
 
@@ -44,35 +44,35 @@ const createTravelPlan = async (
   if (!hostUser.phone || !hostUser.gender || !hostUser.age) {
     throw new AppError(
       status.BAD_REQUEST,
-      "Please complete your profile setup (age, phone and gender required) before creating a travel plan"
+      "Please complete your profile setup (age, phone and gender required) before creating a travel plan",
     );
   }
 
   if (!hostUser.age) {
     throw new AppError(
       status.BAD_REQUEST,
-      "Please complete your profile (age required) before creating a travel plan"
+      "Please complete your profile (age required) before creating a travel plan",
     );
   }
 
   if (hostUser.age === null) {
     new AppError(
       status.BAD_REQUEST,
-      "Your need to update your profile age info to create a travel plan"
+      "Your need to update your profile age info to create a travel plan",
     );
   }
 
   if (hostUser.age < 18) {
     throw new AppError(
       status.BAD_REQUEST,
-      "You must be at least 18 years old to create a travel plan"
+      "You must be at least 18 years old to create a travel plan",
     );
   }
 
   if (hostUser.age < (payload.minAge as number)) {
     throw new AppError(
       status.BAD_REQUEST,
-      `${hostUser.fullname} must be at least ${payload.minAge} years old to book this travel plan.`
+      `${hostUser.fullname} must be at least ${payload.minAge} years old to book this travel plan.`,
     );
   }
 
@@ -86,7 +86,7 @@ const createTravelPlan = async (
   if (providedStartDate < minStartDate) {
     throw new AppError(
       status.BAD_REQUEST,
-      "Start date must be at least 7 days from today"
+      "Start date must be at least 7 days from today",
     );
   }
 
@@ -114,7 +114,7 @@ const createTravelPlan = async (
     if (newStart <= existingEnd && newEnd >= existingStart) {
       throw new AppError(
         status.BAD_REQUEST,
-        `You are already hosting a travel plan during this time range: ${plan.title}`
+        `You are already hosting a travel plan during this time range: ${plan.title}`,
       );
     }
   }
@@ -143,7 +143,7 @@ const createTravelPlan = async (
       if (newStart <= existingEnd && newEnd >= existingStart) {
         throw new AppError(
           status.BAD_REQUEST,
-          `You already have a travel plan booked for this time range: ${existingPlan.title}`
+          `You already have a travel plan booked for this time range: ${existingPlan.title}`,
         );
       }
     }
@@ -161,7 +161,7 @@ const createTravelPlan = async (
 
 const getMyTravelPlan = async (
   hostId: string,
-  query: Record<string, unknown>
+  query: Record<string, unknown>,
 ) => {
   const host = await User.findById(hostId);
   if (!host) {
@@ -174,7 +174,7 @@ const getMyTravelPlan = async (
       // isApproved: ITrevelIsApproved.APPROVED,
       // status: ITrevelStatus.UPCOMING,
     }).populate("host", "fullname email profilePhoto") as any,
-    query
+    query,
   );
 
   const result = await travelPlanQuery
@@ -195,7 +195,7 @@ const getMyTravelPlan = async (
 const getTravelPlanById = async (id: string) => {
   const travelPlan = await TravelPlan.findById(id).populate(
     "host",
-    "fullname email profilePhoto"
+    "fullname email profilePhoto",
   );
 
   if (!travelPlan) {
@@ -238,7 +238,7 @@ const getAllTravelPlansPublic = async (query: Record<string, unknown>) => {
       isApproved: ITrevelIsApproved.APPROVED,
       status: ITrevelStatus.UPCOMING,
     }).populate("host", "fullname email profilePhoto") as any,
-    query
+    query,
   );
 
   const result = await travelPlanQuery
@@ -266,7 +266,7 @@ const getAllTravelPlansAdmin = async (query: Record<string, unknown>) => {
     TravelPlan.find({
       // status: ITrevelStatus.UPCOMING,
     }).populate("host", "fullname email profilePhoto") as any,
-    query
+    query,
   );
 
   const result = await travelPlanQuery
@@ -292,7 +292,7 @@ const approveTravelPlan = async (id: string, isApproved: ITrevelIsApproved) => {
     const updatedPlan = await TravelPlan.findByIdAndUpdate(
       id,
       { isApproved, status: ITrevelStatus.CANCELLED },
-      { new: true }
+      { new: true },
     ).populate("host", "fullname email profilePhoto");
 
     return { data: updatedPlan };
@@ -301,7 +301,7 @@ const approveTravelPlan = async (id: string, isApproved: ITrevelIsApproved) => {
       id,
       // { isApproved },
       { isApproved, status: ITrevelStatus.UPCOMING },
-      { new: true }
+      { new: true },
     ).populate("host", "fullname email profilePhoto");
     return { data: updatedPlan };
   }
@@ -321,14 +321,14 @@ const cancelTravelPlan = async (id: string, userId: string) => {
   if (!isHost) {
     throw new AppError(
       status.FORBIDDEN,
-      "Only the host can cancel this travel plan"
+      "Only the host can cancel this travel plan",
     );
   }
 
   if (travelPlan.isApproved == ITrevelIsApproved.APPROVED) {
     throw new AppError(
       status.BAD_REQUEST,
-      "An approved travel plan cannot be cancelled"
+      "An approved travel plan cannot be cancelled",
     );
   }
 
@@ -339,27 +339,27 @@ const cancelTravelPlan = async (id: string, userId: string) => {
   if (travelPlan.status === ITrevelStatus.ONGOING) {
     throw new AppError(
       status.BAD_REQUEST,
-      "Cannot cancel an ongoing travel plan"
+      "Cannot cancel an ongoing travel plan",
     );
   }
 
   if (travelPlan.status === ITrevelStatus.COMPLETED) {
     throw new AppError(
       status.BAD_REQUEST,
-      "Cannot cancel a completed travel plan"
+      "Cannot cancel a completed travel plan",
     );
   }
 
   const updatedPlan = await TravelPlan.findByIdAndUpdate(
     id,
     { status: ITrevelStatus.CANCELLED, isApproved: ITrevelIsApproved.REJECTED },
-    { new: true }
+    { new: true },
   ).populate("host", "fullname email profilePhoto");
 
   // Cancel all bookings associated with this travel plan
   await Booking.updateMany(
     { travelId: id },
-    { bookingStatus: IBookingStatus.CANCELLED }
+    { bookingStatus: IBookingStatus.CANCELLED },
   );
 
   return { data: updatedPlan };
@@ -368,7 +368,7 @@ const cancelTravelPlan = async (id: string, userId: string) => {
 const updateTravelPlan = async (
   id: string,
   userId: string,
-  payload: Partial<ITravelPlan>
+  payload: Partial<ITravelPlan>,
 ) => {
   const travelPlan = await TravelPlan.findById(id);
 
@@ -381,7 +381,7 @@ const updateTravelPlan = async (
   if (!isHost) {
     throw new AppError(
       status.FORBIDDEN,
-      "Only the host can update this travel plan"
+      "Only the host can update this travel plan",
     );
   }
 
@@ -392,7 +392,7 @@ const updateTravelPlan = async (
   ) {
     throw new AppError(
       status.BAD_REQUEST,
-      `${travelPlan.status} - Travel plan cannot be updated`
+      `${travelPlan.status} - Travel plan cannot be updated`,
     );
   }
 
@@ -402,7 +402,7 @@ const updateTravelPlan = async (
   ) {
     throw new AppError(
       status.BAD_REQUEST,
-      `${travelPlan.isApproved} - Travel plan cannot be updated`
+      `${travelPlan.isApproved} - Travel plan cannot be updated`,
     );
   }
 
@@ -417,7 +417,7 @@ const updateTravelPlan = async (
     if (existingPlan) {
       throw new AppError(
         status.CONFLICT,
-        "A travel plan with this title already exists"
+        "A travel plan with this title already exists",
       );
     }
 
@@ -452,7 +452,7 @@ const updateTravelPlan = async (
     if (providedStartDate < minStartDate) {
       throw new AppError(
         status.BAD_REQUEST,
-        "Start date must be at least 7 days from today"
+        "Start date must be at least 7 days from today",
       );
     }
   }
@@ -461,7 +461,7 @@ const updateTravelPlan = async (
   if (newEnd < newStart) {
     throw new AppError(
       status.BAD_REQUEST,
-      "End date must be after or equal to start date"
+      "End date must be after or equal to start date",
     );
   }
 
@@ -481,7 +481,7 @@ const updateTravelPlan = async (
       if (newStart <= existingEnd && newEnd >= existingStart) {
         throw new AppError(
           status.BAD_REQUEST,
-          `Rescheduling conflict: You have another travel plan '${plan.title}' during this period.`
+          `Rescheduling conflict: You have another travel plan '${plan.title}' during this period.`,
         );
       }
     }
@@ -490,7 +490,7 @@ const updateTravelPlan = async (
   const updatedPlan = await TravelPlan.findByIdAndUpdate(
     id,
     { $set: payload },
-    { new: true, runValidators: true }
+    { new: true, runValidators: true },
   ).populate("host", "fullname email profilePhoto");
 
   return { data: updatedPlan };
@@ -500,7 +500,7 @@ const updateTravelPlan = async (
 const addParticipantToTravelPlan = async (
   travelPlanId: string,
   userId: string,
-  participantData: IParticipantDetails
+  participantData: IParticipantDetails,
 ) => {
   const travelPlan = await TravelPlan.findById(travelPlanId);
 
@@ -512,7 +512,7 @@ const addParticipantToTravelPlan = async (
   if (travelPlan.host.toString() !== userId) {
     throw new AppError(
       status.FORBIDDEN,
-      "Only the host can add participants to their travel plan"
+      "Only the host can add participants to their travel plan",
     );
   }
 
@@ -520,19 +520,19 @@ const addParticipantToTravelPlan = async (
   if (travelPlan.status !== ITrevelStatus.UPCOMING) {
     throw new AppError(
       status.BAD_REQUEST,
-      "Cannot add participants to a non-upcoming travel plan"
+      "Cannot add participants to a non-upcoming travel plan",
     );
   }
 
   // Check if participant already exists (by phone number)
   const existingParticipant = travelPlan.participants.find(
-    (p) => p.phone === participantData.phone
+    (p) => p.phone === participantData.phone,
   );
 
   if (existingParticipant) {
     throw new AppError(
       status.BAD_REQUEST,
-      "A participant with this phone number already exists"
+      "A participant with this phone number already exists",
     );
   }
 
@@ -540,7 +540,7 @@ const addParticipantToTravelPlan = async (
   if (travelPlan.participants.length >= travelPlan.maxGuest) {
     throw new AppError(
       status.BAD_REQUEST,
-      `Maximum guest limit (${travelPlan.maxGuest}) reached`
+      `Maximum guest limit (${travelPlan.maxGuest}) reached`,
     );
   }
 
@@ -548,7 +548,7 @@ const addParticipantToTravelPlan = async (
   if (participantData.age < travelPlan.minAge) {
     throw new AppError(
       status.BAD_REQUEST,
-      `Participant age must be at least ${travelPlan.minAge} years`
+      `Participant age must be at least ${travelPlan.minAge} years`,
     );
   }
 
@@ -556,7 +556,7 @@ const addParticipantToTravelPlan = async (
   const updatedPlan = await TravelPlan.findByIdAndUpdate(
     travelPlanId,
     { $push: { participants: participantData } },
-    { new: true, runValidators: true }
+    { new: true, runValidators: true },
   ).populate("host", "fullname email profilePhoto");
 
   return { data: updatedPlan };
@@ -566,7 +566,7 @@ const addParticipantToTravelPlan = async (
 const removeParticipantFromTravelPlan = async (
   travelPlanId: string,
   participantPhone: string,
-  userId: string
+  userId: string,
 ) => {
   const travelPlan = await TravelPlan.findById(travelPlanId);
 
@@ -578,13 +578,13 @@ const removeParticipantFromTravelPlan = async (
   if (travelPlan.host.toString() !== userId) {
     throw new AppError(
       status.FORBIDDEN,
-      "Only the host can remove participants from their travel plan"
+      "Only the host can remove participants from their travel plan",
     );
   }
 
   // Find participant
   const participant = travelPlan.participants.find(
-    (p) => p.phone === participantPhone
+    (p) => p.phone === participantPhone,
   );
 
   if (!participant) {
@@ -595,7 +595,7 @@ const removeParticipantFromTravelPlan = async (
   if (participant.bookingId) {
     throw new AppError(
       status.BAD_REQUEST,
-      "Cannot remove participant with an active booking. They must cancel their booking first."
+      "Cannot remove participant with an active booking. They must cancel their booking first.",
     );
   }
 
@@ -606,7 +606,7 @@ const removeParticipantFromTravelPlan = async (
   ) {
     throw new AppError(
       status.BAD_REQUEST,
-      "Cannot remove the host from the participant list"
+      "Cannot remove the host from the participant list",
     );
   }
 
@@ -614,7 +614,7 @@ const removeParticipantFromTravelPlan = async (
   const updatedPlan = await TravelPlan.findByIdAndUpdate(
     travelPlanId,
     { $pull: { participants: { phone: participantPhone } } },
-    { new: true }
+    { new: true },
   ).populate("host", "fullname email profilePhoto");
 
   return { data: updatedPlan };
@@ -623,8 +623,19 @@ const removeParticipantFromTravelPlan = async (
 const getPopularDestinations = async () => {
   const result = await TravelPlan.aggregate([
     {
+      $match: {
+        isApproved: ITrevelIsApproved.APPROVED,
+        status: { $in: [ITrevelStatus.UPCOMING, ITrevelStatus.ONGOING] },
+      },
+    },
+    {
       $group: {
-        _id: { city: "$destination.city", country: "$destination.country" },
+        _id: {
+          city: { $toLower: "$destination.city" },
+          country: { $toLower: "$destination.country" },
+        },
+        city: { $first: "$destination.city" },
+        country: { $first: "$destination.country" },
         count: { $sum: 1 },
         image: { $first: "$image" },
       },
@@ -638,15 +649,16 @@ const getPopularDestinations = async () => {
     {
       $project: {
         _id: 0,
-        city: "$_id.city",
-        country: "$_id.country",
-        count: "$count",
-        image: "$image",
+        city: 1,
+        country: 1,
+        count: 1,
+        image: 1,
       },
     },
   ]);
   return { data: result };
 };
+
 
 export const TravelPlanServices = {
   createTravelPlan,
