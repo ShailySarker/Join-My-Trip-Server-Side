@@ -15,6 +15,7 @@ passport.use(
       clientID: envVars.GOOGLE.GOOGLE_CLIENT_ID,
       clientSecret: envVars.GOOGLE.GOOGLE_CLIENT_SECRET,
       callbackURL: envVars.GOOGLE.GOOGLE_CALLBACK_URL,
+      proxy: true,
     },
     async (
       accessToken: string,

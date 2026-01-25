@@ -33,6 +33,10 @@ app.use(
     secret: envVars.GOOGLE.GOOGLE_CLIENT_SECRET,
     resave: false,
     saveUninitialized: false,
+    cookie: {
+      secure: envVars.NODE_ENV === "production",
+      sameSite: envVars.NODE_ENV === "production" ? "none" : "lax",
+    },
   }),
 );
 app.use(passport.initialize());

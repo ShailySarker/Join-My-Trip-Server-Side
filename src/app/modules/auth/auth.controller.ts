@@ -163,13 +163,16 @@ const googleCallback = catchAsync(
     const tokenInfo = createUserTokens(user);
 
     setAuthCookie(res, tokenInfo);
-
-    const redirectUrl =
+// const redirectUrl = envVars.FRONTEND.FRONTEND_URL;
+// res.redirect(`${redirectUrl}/${redirectTo}`);
+    const baseUrl =
       envVars.NODE_ENV === "production"
         ? envVars.FRONTEND.FRONTEND_URL
         : envVars.FRONTEND.FRONTEND_URL_LOCAL;
 
-    res.redirect(`${redirectUrl}/${redirectTo}`);
+    const cleanBaseUrl = baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl;
+
+    res.redirect(`${cleanBaseUrl}/${redirectTo}`);
   },
 );
 
