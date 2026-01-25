@@ -164,7 +164,12 @@ const googleCallback = catchAsync(
 
     setAuthCookie(res, tokenInfo);
 
-    res.redirect(`${envVars.FRONTEND.FRONTEND_URL}/${redirectTo}`);
+    const redirectUrl =
+      envVars.NODE_ENV === "production"
+        ? envVars.FRONTEND.FRONTEND_URL
+        : envVars.FRONTEND.FRONTEND_URL_LOCAL;
+
+    res.redirect(`${redirectUrl}/${redirectTo}`);
   },
 );
 

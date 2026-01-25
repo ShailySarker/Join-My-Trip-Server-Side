@@ -53,30 +53,35 @@ const createCheckoutSessionService = async (
     expireDate.setDate(now.getDate() + 30); // default to 30 days
   }
 
-  const session = await stripe.checkout.sessions.create({
-    mode: "payment",
-    payment_method_types: ["card"],
-    customer: customer.id,
-    // customer_details: { name: userData.fullname, phone: userData?.phone },
-    line_items: [
-      {
-        price_data: {
-          currency: "bdt",
-          product_data: {
-            name: `Plan: ${subscription.plan}`,
-            description: `Payment for ${subscription.plan} plan - Valid for ${
-              subscription.plan.toLowerCase().includes("monthly")
-                ? "30 days"
-                : "1 year"
-            }`,
+    const frontendUrl =
+      envVars.NODE_ENV === "production"
+        ? envVars.FRONTEND.FRONTEND_URL
+        : envVars.FRONTEND.FRONTEND_URL_LOCAL;
+
+    const session = await stripe.checkout.sessions.create({
+      mode: "payment",
+      payment_method_types: ["card"],
+      customer: customer.id,
+      // customer_details: { name: userData.fullname, phone: userData?.phone },
+      line_items: [
+        {
+          price_data: {
+            currency: "bdt",
+            product_data: {
+              name: `Plan: ${subscription.plan}`,
+              description: `Payment for ${subscription.plan} plan - Valid for ${
+                subscription.plan.toLowerCase().includes("monthly")
+                  ? "30 days"
+                  : "1 year"
+              }`,
+            },
+            unit_amount: subscription.amount * 100,
           },
-          unit_amount: subscription.amount * 100,
+          quantity: 1,
         },
-        quantity: 1,
-      },
-    ],
-    success_url: `${envVars.FRONTEND.FRONTEND_URL}/dashboard/payment/payment-success?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${envVars.FRONTEND.FRONTEND_URL}/dashboard/payment/payment-failed`,
+      ],
+      success_url: `${frontendUrl}/dashboard/payment/payment-success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${frontendUrl}/dashboard/payment/payment-failed`,
     metadata: {
       userId: userId.toString(),
       subscriptionId: subscriptionId.toString(),
