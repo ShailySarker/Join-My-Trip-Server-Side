@@ -154,7 +154,7 @@ const googleCallback = catchAsync(
       redirectTo = redirectTo.slice(1);
     }
 
-    const user = req.user as Partial<IUser>;
+    const user = req.user;
 
     if (!user) {
       throw new AppError(status.NOT_FOUND, "User not found");
@@ -163,16 +163,27 @@ const googleCallback = catchAsync(
     const tokenInfo = createUserTokens(user);
 
     setAuthCookie(res, tokenInfo);
-// const redirectUrl = envVars.FRONTEND.FRONTEND_URL;
-// res.redirect(`${redirectUrl}/${redirectTo}`);
-    const baseUrl =
-      envVars.NODE_ENV === "production"
-        ? envVars.FRONTEND.FRONTEND_URL
-        : envVars.FRONTEND.FRONTEND_URL_LOCAL;
 
-    const cleanBaseUrl = baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl;
+    // const redirectUrl = envVars.FRONTEND.FRONTEND_URL;
+    // res.redirect(`${redirectUrl}/${redirectTo}`);
 
-    res.redirect(`${cleanBaseUrl}/${redirectTo}`);
+    const redirectUrl = `${envVars.NODE_ENV === "production" ? envVars.FRONTEND.FRONTEND_URL : envVars.FRONTEND.FRONTEND_URL_LOCAL}`;
+    res.redirect(
+      `${redirectUrl}/${redirectTo}?accessToken=${tokenInfo.accessToken}&refreshToken=${tokenInfo.refreshToken}`,
+    );
+
+    // const baseUrl =
+    // envVars.NODE_ENV === "production"
+    //   ? envVars.FRONTEND.FRONTEND_URL
+    //   : envVars.FRONTEND.FRONTEND_URL_LOCAL;
+
+    // const cleanBaseUrl = baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl;
+
+    // // Redirect to frontend auth-callback route with tokens
+    // // This allows the frontend to set cookies on its own domain
+    // const callbackUrl = `${cleanBaseUrl}/auth-callback?accessToken=${tokenInfo.accessToken}&refreshToken=${tokenInfo.refreshToken}&redirect=${redirectTo}`;
+
+    // res.redirect(callbackUrl);
   },
 );
 
