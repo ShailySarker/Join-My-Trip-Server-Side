@@ -20,7 +20,7 @@ const createBooking = async (userId: string, payload: Partial<IBooking>) => {
   if (!participants || participants.length === 0) {
     throw new AppError(
       status.BAD_REQUEST,
-      "At least one participant is required"
+      "At least one participant is required",
     );
   }
 
@@ -32,38 +32,38 @@ const createBooking = async (userId: string, payload: Partial<IBooking>) => {
 
   // console.log(user);
   // Validate host has required information for participant
-  // if (!user.phone || !user.gender || !user.age) {
-  //   throw new AppError(
-  //     status.BAD_REQUEST,
-  //     "Please complete your profile setup (age, phone and gender required) before joining a travel plan"
-  //   );
-  // }
+  if (!user.phone || !user.gender || !user.age) {
+    throw new AppError(
+      status.BAD_REQUEST,
+      "Please complete your profile setup (age, phone and gender required) before joining a travel plan",
+    );
+  }
 
   // if (!user.age) {
   //   throw new AppError(
   //     status.BAD_REQUEST,
-  //     "Please complete your profile (age required) before joining a travel plan"
+  //     "Please complete your profile (age required) before joining a travel plan",
   //   );
   // }
 
   // if (user.age === null) {
   //   new AppError(
   //     status.BAD_REQUEST,
-  //     "Your need to update your profile age info to join a travel plan"
+  //     "Your need to update your profile age info to join a travel plan",
   //   );
   // }
 
-  // if (user.age < 18) {
-  //   throw new AppError(
-  //     status.BAD_REQUEST,
-  //     "You must be at least 18 years old to join a travel plan"
-  //   );
-  // }
+  if (user.age < 18) {
+    throw new AppError(
+      status.BAD_REQUEST,
+      "You must be at least 18 years old to join a travel plan",
+    );
+  }
 
-  // if (user.age < (payload.minAge as number)) {
+  // if (user.age < (payload as number)) {
   //   throw new AppError(
   //     status.BAD_REQUEST,
-  //     `${user.fullname} must be at least ${payload.minAge} years old to join this travel plan.`
+  //     `${user.fullname} must be at least ${payload.minAge} years old to join this travel plan.`,
   //   );
   // }
 
@@ -76,7 +76,7 @@ const createBooking = async (userId: string, payload: Partial<IBooking>) => {
   if (!hasSubscription) {
     throw new AppError(
       status.FORBIDDEN,
-      "You need an active subscription to create bookings"
+      "You need an active subscription to create bookings",
     );
   }
 
@@ -89,7 +89,7 @@ const createBooking = async (userId: string, payload: Partial<IBooking>) => {
   if (user.age === null) {
     new AppError(
       status.BAD_REQUEST,
-      "Your need to update your profile age info to create a booking"
+      "Your need to update your profile age info to create a booking",
     );
   }
 
@@ -108,12 +108,12 @@ const createBooking = async (userId: string, payload: Partial<IBooking>) => {
 
   // Validate all participants meet age requirement
   const invalidAgeParticipants = participants.filter(
-    (p) => p.age < travelPlan.minAge
+    (p) => p.age < travelPlan.minAge,
   );
   if (invalidAgeParticipants.length > 0) {
     throw new AppError(
       status.BAD_REQUEST,
-      `All participants must be at least ${travelPlan.minAge} years old`
+      `All participants must be at least ${travelPlan.minAge} years old`,
     );
   }
 
@@ -123,7 +123,7 @@ const createBooking = async (userId: string, payload: Partial<IBooking>) => {
   if (participants.length > availableSeats) {
     throw new AppError(
       status.BAD_REQUEST,
-      `Not enough seats available. Only ${availableSeats} seats remaining.`
+      `Not enough seats available. Only ${availableSeats} seats remaining.`,
     );
   }
 
@@ -133,7 +133,7 @@ const createBooking = async (userId: string, payload: Partial<IBooking>) => {
   if (phoneNumbers.length !== uniquePhones.size) {
     throw new AppError(
       status.BAD_REQUEST,
-      "Duplicate phone numbers in participants list"
+      "Duplicate phone numbers in participants list",
     );
   }
 
@@ -143,7 +143,7 @@ const createBooking = async (userId: string, payload: Partial<IBooking>) => {
     .map((p) => p.name);
 
   const duplicateParticipants = participants.filter((p) =>
-    existingName.includes(p.name)
+    existingName.includes(p.name),
   );
 
   if (duplicateParticipants.length > 0) {
@@ -151,7 +151,7 @@ const createBooking = async (userId: string, payload: Partial<IBooking>) => {
       status.BAD_REQUEST,
       `Participant(s) with name - ${duplicateParticipants
         .map((p) => p.name)
-        .join(", ")} already registered for this travel plan`
+        .join(", ")} already registered for this travel plan`,
     );
   }
 
@@ -174,7 +174,7 @@ const createBooking = async (userId: string, payload: Partial<IBooking>) => {
       if (newStart <= existingEnd && newEnd >= existingStart) {
         throw new AppError(
           status.BAD_REQUEST,
-          `You already have a travel plan booked for this time range: ${existingPlan.title}`
+          `You already have a travel plan booked for this time range: ${existingPlan.title}`,
         );
       }
     }
@@ -195,7 +195,7 @@ const createBooking = async (userId: string, payload: Partial<IBooking>) => {
     if (newStart <= existingEnd && newEnd >= existingStart) {
       throw new AppError(
         status.BAD_REQUEST,
-        `You are hosting a travel plan during this time range: ${plan.title}`
+        `You are hosting a travel plan during this time range: ${plan.title}`,
       );
     }
   }
@@ -223,14 +223,14 @@ const createBooking = async (userId: string, payload: Partial<IBooking>) => {
   await TravelPlan.findByIdAndUpdate(
     travelId,
     { $push: { participants: { $each: participantsWithBookingId } } },
-    { new: true }
+    { new: true },
   );
 
   // Update booking with bookingId in participants
   await Booking.findByIdAndUpdate(
     booking._id,
     { participants: participantsWithBookingId },
-    { new: true }
+    { new: true },
   );
 
   const newBooking = await Booking.findById(booking._id).populate([
@@ -281,7 +281,7 @@ const getAllBookings = async (query: Record<string, unknown>) => {
 
 const getMyBookings = async (
   userId: string,
-  query: Record<string, unknown>
+  query: Record<string, unknown>,
 ) => {
   const modelQuery = Booking.find({ userId })
     .populate("userId", "fullname email")
@@ -339,7 +339,7 @@ const getBookingById = async (id: string, userId: string, userRole: string) => {
     .populate("userId", "fullname email")
     .populate(
       "travelId",
-      "title description destination status startDate endDate minAge maxGuest participants"
+      "title description destination status startDate endDate minAge maxGuest participants",
     );
 
   if (!booking) {
@@ -354,7 +354,7 @@ const getBookingById = async (id: string, userId: string, userRole: string) => {
   ) {
     throw new AppError(
       status.FORBIDDEN,
-      "You are not authorized to view this booking"
+      "You are not authorized to view this booking",
     );
   }
 
@@ -375,7 +375,7 @@ const cancelBooking = async (bookingId: string, userId: string) => {
   if (booking.userId.toString() !== userId) {
     throw new AppError(
       status.FORBIDDEN,
-      "You are not authorized to cancel this booking"
+      "You are not authorized to cancel this booking",
     );
   }
 
@@ -389,7 +389,7 @@ const cancelBooking = async (bookingId: string, userId: string) => {
   if (!travelPlan) {
     throw new AppError(
       status.NOT_FOUND,
-      "Travel plan associated with this booking not found"
+      "Travel plan associated with this booking not found",
     );
   }
 
@@ -407,13 +407,13 @@ const cancelBooking = async (bookingId: string, userId: string) => {
         status: ITrevelStatus.CANCELLED,
         // optionally set isApproved to REJECTED if desired, but CANCELLED status is explicit enough
       },
-      { new: true }
+      { new: true },
     );
 
     // Cancel ALL bookings for this travel plan (including the host's)
     await Booking.updateMany(
       { travelId: booking.travelId },
-      { bookingStatus: "CANCELLED" }
+      { bookingStatus: "CANCELLED" },
     );
 
     // Return the updated host booking
@@ -437,7 +437,7 @@ const cancelBooking = async (bookingId: string, userId: string) => {
     const updatedBooking = await Booking.findByIdAndUpdate(
       bookingId,
       { bookingStatus: "CANCELLED" },
-      { new: true }
+      { new: true },
     )
       .populate("userId", "fullname email")
       .populate("travelId", "title destination startDate endDate");
@@ -452,7 +452,7 @@ const cancelBooking = async (bookingId: string, userId: string) => {
 const addParticipantsToBooking = async (
   bookingId: string,
   userId: string,
-  newParticipants: any[]
+  newParticipants: any[],
 ) => {
   // Find the booking
   const booking = await Booking.findById(bookingId);
@@ -468,7 +468,7 @@ const addParticipantsToBooking = async (
   if (booking.userId.toString() !== userId) {
     throw new AppError(
       status.FORBIDDEN,
-      "You are not authorized to modify this booking"
+      "You are not authorized to modify this booking",
     );
   }
 
@@ -476,7 +476,7 @@ const addParticipantsToBooking = async (
   if (booking.bookingStatus === "CANCELLED") {
     throw new AppError(
       status.BAD_REQUEST,
-      "Cannot add participants to a cancelled booking"
+      "Cannot add participants to a cancelled booking",
     );
   }
 
@@ -488,12 +488,12 @@ const addParticipantsToBooking = async (
 
   // Validate all new participants meet age requirement
   const invalidAgeParticipants = newParticipants.filter(
-    (p) => p.age < travelPlan.minAge
+    (p) => p.age < travelPlan.minAge,
   );
   if (invalidAgeParticipants.length > 0) {
     throw new AppError(
       status.BAD_REQUEST,
-      `All participants must be at least ${travelPlan.minAge} years old`
+      `All participants must be at least ${travelPlan.minAge} years old`,
     );
   }
 
@@ -503,7 +503,7 @@ const addParticipantsToBooking = async (
   if (newParticipants.length > availableSeats) {
     throw new AppError(
       status.BAD_REQUEST,
-      `Not enough seats available. Only ${availableSeats} seats remaining.`
+      `Not enough seats available. Only ${availableSeats} seats remaining.`,
     );
   }
 
@@ -513,14 +513,14 @@ const addParticipantsToBooking = async (
   if (newPhones.length !== uniqueNewPhones.size) {
     throw new AppError(
       status.BAD_REQUEST,
-      "Duplicate phone numbers in new participants list"
+      "Duplicate phone numbers in new participants list",
     );
   }
 
   // Check if any new participant already exists in travel plan
   const existingPhones = travelPlan.participants.map((p) => p.phone);
   const duplicates = newParticipants.filter((p) =>
-    existingPhones.includes(p.phone)
+    existingPhones.includes(p.phone),
   );
 
   if (duplicates.length > 0) {
@@ -528,7 +528,7 @@ const addParticipantsToBooking = async (
       status.BAD_REQUEST,
       `Participant(s) with phone ${duplicates
         .map((p) => p.phone)
-        .join(", ")} already registered for this travel plan`
+        .join(", ")} already registered for this travel plan`,
     );
   }
 
@@ -569,14 +569,14 @@ const addParticipantsToBooking = async (
       $push: { participants: { $each: participantsWithBookingId } },
       $inc: { totalPeople: newParticipants.length },
     },
-    { new: true }
+    { new: true },
   );
 
   // Add to travel plan
   await TravelPlan.findByIdAndUpdate(
     booking.travelId,
     { $push: { participants: { $each: participantsWithBookingId } } },
-    { new: true }
+    { new: true },
   );
 
   return {
@@ -594,7 +594,7 @@ const addParticipantsToBooking = async (
 const removeParticipantFromBooking = async (
   bookingId: string,
   participantPhone: string,
-  userId: string
+  userId: string,
 ) => {
   // Find the booking
   const booking = await Booking.findById(bookingId);
@@ -607,7 +607,7 @@ const removeParticipantFromBooking = async (
   if (booking.userId.toString() !== userId) {
     throw new AppError(
       status.FORBIDDEN,
-      "You are not authorized to modify this booking"
+      "You are not authorized to modify this booking",
     );
   }
 
@@ -615,19 +615,19 @@ const removeParticipantFromBooking = async (
   if (booking.bookingStatus === "CANCELLED") {
     throw new AppError(
       status.BAD_REQUEST,
-      "Cannot remove participants from a cancelled booking"
+      "Cannot remove participants from a cancelled booking",
     );
   }
 
   // Check if participant exists in booking
   const participant = booking.participants.find(
-    (p) => p.phone === participantPhone
+    (p) => p.phone === participantPhone,
   );
 
   if (!participant) {
     throw new AppError(
       status.NOT_FOUND,
-      "Participant not found in this booking"
+      "Participant not found in this booking",
     );
   }
 
@@ -635,7 +635,7 @@ const removeParticipantFromBooking = async (
   if (booking.participants.length <= 1) {
     throw new AppError(
       status.BAD_REQUEST,
-      "Cannot remove the last participant. Cancel the booking instead."
+      "Cannot remove the last participant. Cancel the booking instead.",
     );
   }
 
@@ -646,7 +646,7 @@ const removeParticipantFromBooking = async (
       $pull: { participants: { phone: participantPhone } },
       $inc: { totalPeople: -1 },
     },
-    { new: true }
+    { new: true },
   );
 
   // Remove from travel plan
@@ -657,7 +657,7 @@ const removeParticipantFromBooking = async (
         participants: { phone: participantPhone, bookingId: booking._id },
       },
     },
-    { new: true }
+    { new: true },
   );
 
   return {
